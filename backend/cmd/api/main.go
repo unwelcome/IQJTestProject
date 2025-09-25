@@ -6,6 +6,7 @@ import (
 	"github.com/rs/zerolog/log"
 	"github.com/unwelcome/iqjtest/database/postgresql"
 	"github.com/unwelcome/iqjtest/internal/config"
+	"github.com/unwelcome/iqjtest/internal/middlewares"
 )
 
 func main() {
@@ -22,13 +23,15 @@ func main() {
 	// Инициализация fiber
 	app := fiber.New()
 
+	// Подключение логирования
+	logsMiddleware := middlewares.RequestMiddleware(logger)
+	app.Use(logsMiddleware)
+
 	app.Get("/", func(c *fiber.Ctx) error {
-		logger.Info().Msg("Request get")
 		return c.SendString("Hello, World!")
 	})
 
 	app.Post("/", func(c *fiber.Ctx) error {
-		logger.Info().Msg("Request post")
 		if err := postgres.DB.Ping(); err != nil {
 			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
 		}
