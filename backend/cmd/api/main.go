@@ -6,7 +6,8 @@ import (
 	"github.com/rs/zerolog/log"
 	"github.com/unwelcome/iqjtest/database/postgresql"
 	"github.com/unwelcome/iqjtest/internal/config"
-	"github.com/unwelcome/iqjtest/internal/middlewares"
+	"github.com/unwelcome/iqjtest/internal/dependency_injection"
+	"github.com/unwelcome/iqjtest/internal/routes"
 )
 
 func main() {
@@ -23,23 +24,14 @@ func main() {
 	// Инициализация fiber
 	app := fiber.New()
 
-	// Подключение логирования
-	logsMiddleware := middlewares.RequestMiddleware(logger)
-	app.Use(logsMiddleware)
+	// Создание контейнера с dependency injection
+	container := dependency_injection.NewContainer(postgres.DB, logger)
 
-	app.Get("/", func(c *fiber.Ctx) error {
-		return c.SendString("Hello, World!")
-	})
-
-	app.Post("/", func(c *fiber.Ctx) error {
-		if err := postgres.DB.Ping(); err != nil {
-			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
-		}
-		return c.Status(fiber.StatusOK).SendString("Pong")
-	})
+	// Инициализация роутов
+	routes.SetupRoutes(app, container)
 
 	// Запуск приложения
 	if err := app.Listen(":8080"); err != nil {
-		logger.Fatal().Err(err)
+		logger.Fatal().Err(err).Msg("Failed to start server")
 	}
 }

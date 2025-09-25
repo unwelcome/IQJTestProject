@@ -2,8 +2,7 @@
 
 CREATE TABLE "users" (
     "id" SERIAL PRIMARY KEY,
-    "login" varchar(255) NOT NULL,
-    "password_salt" varchar(255) NOT NULL,
+    "login" varchar(255) NOT NULL UNIQUE,
     "password_hash" varchar(255) NOT NULL,
     "created_at" timestamp
 );
@@ -28,6 +27,7 @@ CREATE TABLE "cat_photos" (
     "is_primary" bool DEFAULT false
 );
 
+CREATE INDEX idx_users_login ON users(login);
 CREATE INDEX idx_cat_photos_cat_id ON cat_photos(cat_id);
 CREATE INDEX idx_cat_photos_primary ON cat_photos(cat_id, is_primary);
 

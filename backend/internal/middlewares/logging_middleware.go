@@ -6,7 +6,7 @@ import (
 	"time"
 )
 
-func RequestMiddleware(l zerolog.Logger) fiber.Handler {
+func LoggingRequest(l zerolog.Logger) fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		startTime := time.Now()
 
@@ -16,7 +16,7 @@ func RequestMiddleware(l zerolog.Logger) fiber.Handler {
 			Str("ip", c.IP()).
 			Str("method", c.Method()).
 			Str("path", c.Path()).
-			Str("body", string(c.Body())).
+			//RawJSON("body", c.Body()).
 			Int("duration", int(time.Since(startTime).Milliseconds())).
 			Int("status", c.Response().StatusCode()).
 			Msg("request")
