@@ -15,7 +15,7 @@ func NewUserRepository(db *sql.DB) *UserRepository {
 }
 
 func (r *UserRepository) CreateUser(ctx context.Context, user *entities.User) error {
-	query := `INSERT INTO users(login, password_hash) VALUES ($1, $2, $3)`
+	query := `INSERT INTO users(login, password_hash) VALUES ($1, $2) RETURNING id`
 
 	err := r.db.QueryRowContext(ctx, query, user.Login, user.PasswordHash).Scan(&user.ID)
 	if err != nil {

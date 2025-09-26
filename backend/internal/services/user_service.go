@@ -32,7 +32,7 @@ func (s *UserService) CreateUser(ctx context.Context, userCreate *entities.UserC
 	}
 
 	// Создаем пользователя
-	user := &entities.User{Login: userCreate.Login, Password: string(passwordHash)}
+	user := &entities.User{Login: userCreate.Login, PasswordHash: string(passwordHash)}
 
 	// Добавляем пользователя в бд
 	err = s.userRepository.CreateUser(ctx, user)

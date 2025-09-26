@@ -42,6 +42,7 @@ func main() {
 	// Инициализация роутов
 	routes.SetupRoutes(app, container)
 
+	// swag init -o ./api/docs --dir ./cmd/api,./internal/entities,./internal/handlers
 	app.Get("/swagger/*", swagger.HandlerDefault)
 
 	// Запуск приложения

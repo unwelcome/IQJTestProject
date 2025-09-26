@@ -4,7 +4,7 @@ CREATE TABLE "users" (
     "id" SERIAL PRIMARY KEY,
     "login" varchar(255) NOT NULL UNIQUE,
     "password_hash" varchar(255) NOT NULL,
-    "created_at" timestamp
+    "created_at" timestamp NOT NULL DEFAULT NOW()
 );
 
 CREATE TABLE "cats" (

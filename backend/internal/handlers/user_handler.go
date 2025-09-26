@@ -23,11 +23,10 @@ func NewUserHandler(userService *services.UserService) *UserHandler {
 // @Accept json
 // @Produce json
 // @Param user body entities.UserCreateRequest true "Данные пользователя"
-// @Success 201 {object} entities.User
-// @Failure 400 {object} entities.ErrorResponse
-// @Failure 500 {object} entities.ErrorResponse
-// @Router /api/users [post]
-
+// @Success 201 {object} entities.UserCreateResponse
+// @Failure 400 {object} entities.ErrorEntity
+// @Failure 500 {object} entities.ErrorEntity
+// @Router /user/create [post]
 func (h *UserHandler) CreateUser(c *fiber.Ctx) error {
 	// Ограничиваем время выполнения
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)

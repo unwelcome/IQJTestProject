@@ -1,11 +1,59 @@
 basePath: /api
+definitions:
+  entities.ErrorEntity:
+    properties:
+      error:
+        type: string
+    type: object
+  entities.UserCreateRequest:
+    properties:
+      login:
+        type: string
+      password:
+        type: string
+    type: object
+  entities.UserCreateResponse:
+    properties:
+      id:
+        type: integer
+    type: object
 host: localhost:8080
 info:
   contact: {}
-  description: IQJ test task.
-  title: Swagger Example API
+  description: Swagger for IQJ test task.
+  title: IQJ Test Task
   version: "1.0"
-paths: {}
+paths:
+  /user/create:
+    post:
+      consumes:
+      - application/json
+      description: Создает нового пользователя в системе
+      parameters:
+      - description: Данные пользователя
+        in: body
+        name: user
+        required: true
+        schema:
+          $ref: '#/definitions/entities.UserCreateRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/entities.UserCreateResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/entities.ErrorEntity'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/entities.ErrorEntity'
+      summary: Создание пользователя
+      tags:
+      - users
 securityDefinitions:
   ApiKeyAuth:
     in: header
