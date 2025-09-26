@@ -1,7 +1,6 @@
 package main
 
 import (
-	"github.com/arsmn/fiber-swagger/v2"
 	"github.com/gofiber/fiber/v2"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
@@ -41,9 +40,6 @@ func main() {
 
 	// Инициализация роутов
 	routes.SetupRoutes(app, container)
-
-	// swag init -o ./api/docs --dir ./cmd/api,./internal/entities,./internal/handlers
-	app.Get("/swagger/*", swagger.HandlerDefault)
 
 	// Запуск приложения
 	if err := app.Listen(":8080"); err != nil {
