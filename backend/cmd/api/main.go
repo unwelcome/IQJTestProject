@@ -1,15 +1,27 @@
 package main
 
 import (
+	"github.com/arsmn/fiber-swagger/v2"
 	"github.com/gofiber/fiber/v2"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
+	_ "github.com/unwelcome/iqjtest/api/docs"
 	"github.com/unwelcome/iqjtest/database/postgresql"
 	"github.com/unwelcome/iqjtest/internal/config"
 	"github.com/unwelcome/iqjtest/internal/dependency_injection"
 	"github.com/unwelcome/iqjtest/internal/routes"
 )
 
+// @title           IQJ Test Task
+// @version         1.0
+// @description     Swagger for IQJ test task.
+
+// @host      localhost:8080
+// @BasePath  /api
+
+// @securityDefinitions.apikey ApiKeyAuth
+// @in header
+// @name Authorization
 func main() {
 	// Инициализация логгера
 	zerolog.TimeFieldFormat = "02.01.2006 15:04:05.000"
@@ -29,6 +41,8 @@ func main() {
 
 	// Инициализация роутов
 	routes.SetupRoutes(app, container)
+
+	app.Get("/swagger/*", swagger.HandlerDefault)
 
 	// Запуск приложения
 	if err := app.Listen(":8080"); err != nil {
