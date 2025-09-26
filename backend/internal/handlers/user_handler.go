@@ -2,10 +2,11 @@ package handlers
 
 import (
 	"context"
+	"time"
+
 	"github.com/gofiber/fiber/v2"
 	"github.com/unwelcome/iqjtest/internal/entities"
 	"github.com/unwelcome/iqjtest/internal/services"
-	"time"
 )
 
 type UserHandler struct {
@@ -28,11 +29,11 @@ func NewUserHandler(userService *services.UserService) *UserHandler {
 // @Failure 500 {object} entities.ErrorEntity
 // @Router /user/create [post]
 func (h *UserHandler) CreateUser(c *fiber.Ctx) error {
-	// Ограничиваем время выполнения
+	// Ограничение времени выполнения
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	// Парсим данные из тела запроса
+	// Парсинг данных из тела запроса
 	userCreateRequest := &entities.UserCreateRequest{}
 	if err := c.BodyParser(&userCreateRequest); err != nil {
 		return c.Status(400).JSON(fiber.Map{"error": "Invalid input"})
@@ -41,7 +42,40 @@ func (h *UserHandler) CreateUser(c *fiber.Ctx) error {
 	// Создание пользователя
 	userCreateResponse, err := h.userService.CreateUser(ctx, userCreateRequest)
 	if err != nil {
-		return c.Status(400).JSON(fiber.Map{"error": err.Error()})
+		return c.Status(500).JSON(fiber.Map{"error": err.Error()})
 	}
-	return c.Status(200).JSON(userCreateResponse)
+	return c.Status(201).JSON(userCreateResponse)
+}
+
+// GetUserByID получение пользователя по ID
+// @Summary получение пользователя по ID
+// @Description получаем пользователя по ID
+// @Tags users
+// @Accept json
+// @Produce json
+// @Param id path int true "User ID"
+// @Success 200 {object} entities.UserGet
+// @Failure 400 {object} entities.ErrorEntity
+// @Failure 404 {object} entities.ErrorEntity
+// @Router /user/{id} [get]
+func (h *UserHandler) GetUserByID(c *fiber.Ctx) error {
+	// Ограничение времени выполнения
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	userID, err := c.ParamsInt("id")
+	if err != nil {
+		return c.Status(400).JSON(fiber.Map{"error": "Missing id"})
+	}
+
+	if userID < 1 {
+		return c.Status(400).JSON(fiber.Map{"error": "Invalid id"})
+	}
+
+	user, err := h.userService.GetUserByID(ctx, userID)
+	if err != nil {
+		return c.Status(404).JSON(fiber.Map{"error": "User not found"})
+	}
+
+	return c.Status(200).JSON(user)
 }

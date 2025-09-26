@@ -3,6 +3,7 @@ package services
 import (
 	"context"
 	"errors"
+
 	"github.com/unwelcome/iqjtest/internal/entities"
 	"github.com/unwelcome/iqjtest/internal/repositories"
 	"golang.org/x/crypto/bcrypt"
@@ -40,4 +41,14 @@ func (s *UserService) CreateUser(ctx context.Context, userCreate *entities.UserC
 		return nil, err
 	}
 	return &entities.UserCreateResponse{ID: user.ID}, nil
+}
+
+func (s *UserService) GetUserByID(ctx context.Context, id int) (*entities.UserGet, error) {
+	user, err := s.userRepository.GetUserByID(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+
+	user.ID = id
+	return user, nil
 }

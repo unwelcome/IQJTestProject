@@ -3,6 +3,7 @@ package repositories
 import (
 	"context"
 	"database/sql"
+
 	"github.com/unwelcome/iqjtest/internal/entities"
 )
 
@@ -24,11 +25,11 @@ func (r *UserRepository) CreateUser(ctx context.Context, user *entities.User) er
 	return nil
 }
 
-func (r *UserRepository) GetUserByID(ctx context.Context, id int) (*entities.User, error) {
+func (r *UserRepository) GetUserByID(ctx context.Context, id int) (*entities.UserGet, error) {
 	query := `SELECT login, password_hash, created_at FROM users WHERE id = $1`
 
 	row := r.db.QueryRowContext(ctx, query, id)
-	user := &entities.User{ID: id}
+	user := &entities.UserGet{ID: id}
 	err := row.Scan(&user.Login, &user.PasswordHash, &user.CreatedAt)
 	if err != nil {
 		return nil, err
@@ -36,11 +37,11 @@ func (r *UserRepository) GetUserByID(ctx context.Context, id int) (*entities.Use
 	return user, nil
 }
 
-func (r *UserRepository) GetUserByLogin(ctx context.Context, login string) (*entities.User, error) {
+func (r *UserRepository) GetUserByLogin(ctx context.Context, login string) (*entities.UserGet, error) {
 	query := `SELECT id, password_hash, created_at FROM users WHERE login = $1`
 
 	row := r.db.QueryRowContext(ctx, query, login)
-	user := &entities.User{Login: login}
+	user := &entities.UserGet{Login: login}
 	err := row.Scan(&user.ID, &user.PasswordHash, &user.CreatedAt)
 	if err != nil {
 		return nil, err
@@ -48,7 +49,7 @@ func (r *UserRepository) GetUserByLogin(ctx context.Context, login string) (*ent
 	return user, nil
 }
 
-func (r *UserRepository) GetAllUsers(ctx context.Context) ([]*entities.User, error) {
+func (r *UserRepository) GetAllUsers(ctx context.Context) ([]*entities.UserGet, error) {
 	query := `SELECT id, login, password_hash, created_at FROM users`
 
 	rows, err := r.db.QueryContext(ctx, query)
@@ -57,10 +58,10 @@ func (r *UserRepository) GetAllUsers(ctx context.Context) ([]*entities.User, err
 	}
 	defer rows.Close()
 
-	var users []*entities.User
+	var users []*entities.UserGet
 
 	for rows.Next() {
-		user := &entities.User{}
+		user := &entities.UserGet{}
 		err = rows.Scan(&user.ID, &user.Login, &user.PasswordHash, &user.CreatedAt)
 		if err != nil {
 			return nil, err
@@ -69,6 +70,16 @@ func (r *UserRepository) GetAllUsers(ctx context.Context) ([]*entities.User, err
 	}
 
 	return users, nil
+}
+
+func (r *UserRepository) UpdateUser(ctx context.Context, newUser *entities.User) error {
+	query := `UPDATE users SET (login, password_hash) = ($1, $2) WHERE id = $3`
+
+	_, err := r.db.ExecContext(ctx, query, newUser.Login, newUser.PasswordHash, newUser.ID)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func (r *UserRepository) DeleteUser(ctx context.Context, id int) error {

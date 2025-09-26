@@ -17,6 +17,17 @@ definitions:
       id:
         type: integer
     type: object
+  entities.UserGet:
+    properties:
+      created_at:
+        type: string
+      id:
+        type: integer
+      login:
+        type: string
+      password_hash:
+        type: string
+    type: object
 host: localhost:8080
 info:
   contact: {}
@@ -24,6 +35,35 @@ info:
   title: IQJ Test Task
   version: "1.0"
 paths:
+  /user/{id}:
+    get:
+      consumes:
+      - application/json
+      description: получаем пользователя по ID
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entities.UserGet'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/entities.ErrorEntity'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/entities.ErrorEntity'
+      summary: получение пользователя по ID
+      tags:
+      - users
   /user/create:
     post:
       consumes:

@@ -1,7 +1,7 @@
 package routes
 
 import (
-	"github.com/arsmn/fiber-swagger/v2"
+	swagger "github.com/arsmn/fiber-swagger/v2"
 	"github.com/gofiber/fiber/v2"
 	"github.com/unwelcome/iqjtest/internal/dependency_injection"
 )
@@ -22,5 +22,5 @@ func SetupRoutes(app *fiber.App, container *dependency_injection.Container) {
 
 	// User запросы
 	api.Post("/user/create", container.UserHandler.CreateUser)
-	//api.Get("/user/:id", container.UserHandler.GetUserById)
+	api.Get("/user/:id", container.UserHandler.GetUserByID)
 }
