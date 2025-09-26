@@ -25,8 +25,6 @@ definitions:
         type: integer
       login:
         type: string
-      password_hash:
-        type: string
     type: object
 host: localhost:8080
 info:
@@ -62,6 +60,27 @@ paths:
           schema:
             $ref: '#/definitions/entities.ErrorEntity'
       summary: получение пользователя по ID
+      tags:
+      - users
+  /user/all:
+    get:
+      consumes:
+      - application/json
+      description: получение всех пользователей
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/entities.UserGet'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/entities.ErrorEntity'
+      summary: получение всех пользователей
       tags:
       - users
   /user/create:

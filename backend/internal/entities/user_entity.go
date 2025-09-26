@@ -27,8 +27,7 @@ type UserLoginResponse struct {
 }
 
 type UserGet struct {
-	ID           int    `json:"id" db:"id"`
-	Login        string `json:"login" db:"login"`
-	PasswordHash string `json:"password_hash" db:"password_hash"`
-	CreatedAt    string `json:"created_at" db:"created_at"`
+	ID        int    `json:"id" db:"id"`
+	Login     string `json:"login" db:"login"`
+	CreatedAt string `json:"created_at" db:"created_at"`
 }

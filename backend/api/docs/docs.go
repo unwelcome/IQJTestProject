@@ -15,6 +15,38 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
+        "/user/all": {
+            "get": {
+                "description": "получение всех пользователей",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "users"
+                ],
+                "summary": "получение всех пользователей",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/entities.UserGet"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/entities.ErrorEntity"
+                        }
+                    }
+                }
+            }
+        },
         "/user/create": {
             "post": {
                 "description": "Создает нового пользователя в системе",
@@ -144,9 +176,6 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "login": {
-                    "type": "string"
-                },
-                "password_hash": {
                     "type": "string"
                 }
             }

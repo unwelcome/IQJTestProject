@@ -52,3 +52,12 @@ func (s *UserService) GetUserByID(ctx context.Context, id int) (*entities.UserGe
 	user.ID = id
 	return user, nil
 }
+
+func (s *UserService) GetAllUsers(ctx context.Context) ([]*entities.UserGet, error) {
+	users, err := s.userRepository.GetAllUsers(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return users, nil
+}

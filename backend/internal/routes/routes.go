@@ -22,5 +22,6 @@ func SetupRoutes(app *fiber.App, container *dependency_injection.Container) {
 
 	// User запросы
 	api.Post("/user/create", container.UserHandler.CreateUser)
+	api.Get("/user/all", container.UserHandler.GetAllUsers)
 	api.Get("/user/:id", container.UserHandler.GetUserByID)
 }
