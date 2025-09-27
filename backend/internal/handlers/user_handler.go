@@ -17,7 +17,7 @@ func NewUserHandler(userService *services.UserService) *UserHandler {
 	return &UserHandler{userService: userService}
 }
 
-// CreateUser создает пользователя
+// CreateUser
 // @Summary Создание пользователя
 // @Description Создает нового пользователя в системе
 // @Tags users
@@ -47,7 +47,7 @@ func (h *UserHandler) CreateUser(c *fiber.Ctx) error {
 	return c.Status(201).JSON(userCreateResponse)
 }
 
-// GetUserByID получение пользователя по ID
+// GetUserByID
 // @Summary получение пользователя по ID
 // @Description получаем пользователя по ID
 // @Tags users
@@ -80,7 +80,7 @@ func (h *UserHandler) GetUserByID(c *fiber.Ctx) error {
 	return c.Status(200).JSON(user)
 }
 
-// GetAllUsers получение всех пользователей
+// GetAllUsers
 // @Summary получение всех пользователей
 // @Description получение всех пользователей
 // @Tags users
@@ -98,5 +98,92 @@ func (h *UserHandler) GetAllUsers(c *fiber.Ctx) error {
 		return c.Status(500).JSON(fiber.Map{"error": err.Error()})
 	}
 
-	return c.Status(200).JSON(fiber.Map{"users": users})
+	return c.Status(200).JSON(users)
+}
+
+// UpdateUserLogin
+// @Summary обновление логина пользователя
+// @Description обновление логина пользователя
+// @Tags users
+// @Accept json
+// @Produce json
+// @Param user body entities.UserUpdateLoginRequest true "Данные пользователя"
+// @Success 200 {object} entities.UserUpdateLoginResponse
+// @Failure 400 {object} entities.ErrorEntity
+// @Failure 500 {object} entities.ErrorEntity
+// @Router /user/login [patch]
+func (h *UserHandler) UpdateUserLogin(c *fiber.Ctx) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	userUpdateLoginRequest := &entities.UserUpdateLoginRequest{}
+	if err := c.BodyParser(&userUpdateLoginRequest); err != nil {
+		return c.Status(400).JSON(fiber.Map{"error": "Invalid input"})
+	}
+
+	err := h.userService.UpdateUserLogin(ctx, userUpdateLoginRequest)
+	if err != nil {
+		return c.Status(500).JSON(fiber.Map{"error": err.Error()})
+	}
+
+	return c.Status(200).JSON(&entities.UserUpdateLoginResponse{ID: userUpdateLoginRequest.ID})
+}
+
+// UpdateUserPassword
+// @Summary обновление пароля пользователя
+// @Description обновление пароля пользователя
+// @Tags users
+// @Accept json
+// @Produce json
+// @Param user body entities.UserUpdatePasswordRequest true "Данные пользователя"
+// @Success 200 {object} entities.UserUpdatePasswordResponse
+// @Failure 400 {object} entities.ErrorEntity
+// @Failure 500 {object} entities.ErrorEntity
+// @Router /user/password [patch]
+func (h *UserHandler) UpdateUserPassword(c *fiber.Ctx) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	userUpdatePasswordRequest := &entities.UserUpdatePasswordRequest{}
+	if err := c.BodyParser(&userUpdatePasswordRequest); err != nil {
+		return c.Status(400).JSON(fiber.Map{"error": "Invalid input"})
+	}
+
+	err := h.userService.UpdateUserPassword(ctx, userUpdatePasswordRequest)
+	if err != nil {
+		return c.Status(500).JSON(fiber.Map{"error": err.Error()})
+	}
+
+	return c.Status(200).JSON(&entities.UserUpdatePasswordResponse{ID: userUpdatePasswordRequest.ID})
+}
+
+// DeleteUser
+// @Summary удаление пользователя
+// @Description удаление пользователя
+// @Tags users
+// @Accept json
+// @Produce json
+// @Param id path int true "User ID"
+// @Success 200 {object} string
+// @Failure 400 {object} entities.ErrorEntity
+// @Failure 500 {object} entities.ErrorEntity
+// @Router /user/{id} [delete]
+func (h *UserHandler) DeleteUser(c *fiber.Ctx) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	userID, err := c.ParamsInt("id")
+	if err != nil {
+		return c.Status(400).JSON(fiber.Map{"error": "Missing id"})
+	}
+
+	if userID < 1 {
+		return c.Status(400).JSON(fiber.Map{"error": "Invalid id"})
+	}
+
+	err = h.userService.DeleteUser(ctx, userID)
+	if err != nil {
+		return c.Status(500).JSON(fiber.Map{"error": err.Error()})
+	}
+	return c.Status(200).SendString("User deleted")
 }

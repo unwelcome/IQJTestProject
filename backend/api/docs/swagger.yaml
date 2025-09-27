@@ -26,6 +26,30 @@ definitions:
       login:
         type: string
     type: object
+  entities.UserUpdateLoginRequest:
+    properties:
+      id:
+        type: integer
+      login:
+        type: string
+    type: object
+  entities.UserUpdateLoginResponse:
+    properties:
+      id:
+        type: integer
+    type: object
+  entities.UserUpdatePasswordRequest:
+    properties:
+      id:
+        type: integer
+      password:
+        type: string
+    type: object
+  entities.UserUpdatePasswordResponse:
+    properties:
+      id:
+        type: integer
+    type: object
 host: localhost:8080
 info:
   contact: {}
@@ -34,6 +58,34 @@ info:
   version: "1.0"
 paths:
   /user/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: удаление пользователя
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/entities.ErrorEntity'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/entities.ErrorEntity'
+      summary: удаление пользователя
+      tags:
+      - users
     get:
       consumes:
       - application/json
@@ -111,6 +163,66 @@ paths:
           schema:
             $ref: '#/definitions/entities.ErrorEntity'
       summary: Создание пользователя
+      tags:
+      - users
+  /user/login:
+    patch:
+      consumes:
+      - application/json
+      description: обновление логина пользователя
+      parameters:
+      - description: Данные пользователя
+        in: body
+        name: user
+        required: true
+        schema:
+          $ref: '#/definitions/entities.UserUpdateLoginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entities.UserUpdateLoginResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/entities.ErrorEntity'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/entities.ErrorEntity'
+      summary: обновление логина пользователя
+      tags:
+      - users
+  /user/password:
+    patch:
+      consumes:
+      - application/json
+      description: обновление пароля пользователя
+      parameters:
+      - description: Данные пользователя
+        in: body
+        name: user
+        required: true
+        schema:
+          $ref: '#/definitions/entities.UserUpdatePasswordRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entities.UserUpdatePasswordResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/entities.ErrorEntity'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/entities.ErrorEntity'
+      summary: обновление пароля пользователя
       tags:
       - users
 securityDefinitions:

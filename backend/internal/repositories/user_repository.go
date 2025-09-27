@@ -60,10 +60,20 @@ func (r *UserRepository) GetAllUsers(ctx context.Context) ([]*entities.UserGet, 
 	return users, nil
 }
 
-func (r *UserRepository) UpdateUser(ctx context.Context, newUser *entities.User) error {
-	query := `UPDATE users SET (login, password_hash) = ($1, $2) WHERE id = $3`
+func (r *UserRepository) UpdateUserLogin(ctx context.Context, id int, login string) error {
+	query := `UPDATE users SET login = $1 WHERE id = $2`
 
-	_, err := r.db.ExecContext(ctx, query, newUser.Login, newUser.PasswordHash, newUser.ID)
+	_, err := r.db.ExecContext(ctx, query, login, id)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (r *UserRepository) UpdateUserPassword(ctx context.Context, id int, passwordHash string) error {
+	query := `UPDATE users SET password_hash = $1 WHERE id = $2`
+
+	_, err := r.db.ExecContext(ctx, query, passwordHash, id)
 	if err != nil {
 		return err
 	}
