@@ -5,17 +5,19 @@ definitions:
       error:
         type: string
     type: object
+  entities.TokenPair:
+    properties:
+      access_token:
+        type: string
+      refresh_token:
+        type: string
+    type: object
   entities.UserCreateRequest:
     properties:
       login:
         type: string
       password:
         type: string
-    type: object
-  entities.UserCreateResponse:
-    properties:
-      id:
-        type: integer
     type: object
   entities.UserGet:
     properties:
@@ -153,7 +155,7 @@ paths:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/entities.UserCreateResponse'
+            $ref: '#/definitions/entities.TokenPair'
         "400":
           description: Bad Request
           schema:

@@ -16,7 +16,7 @@ func Connect(ctx context.Context, cfg *config.Config, l zerolog.Logger) *redis.C
 	rdb := redis.NewClient(opt)
 
 	if err = rdb.Ping(ctx).Err(); err != nil {
-		l.Panic().Err(err).Msg("failed to connect to redis server")
+		l.Fatal().Err(err).Msg("failed to connect to redis server")
 		return nil
 	}
 

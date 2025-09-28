@@ -75,7 +75,7 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/entities.UserCreateResponse"
+                            "$ref": "#/definitions/entities.TokenPair"
                         }
                     },
                     "400": {
@@ -281,6 +281,17 @@ const docTemplate = `{
                 }
             }
         },
+        "entities.TokenPair": {
+            "type": "object",
+            "properties": {
+                "access_token": {
+                    "type": "string"
+                },
+                "refresh_token": {
+                    "type": "string"
+                }
+            }
+        },
         "entities.UserCreateRequest": {
             "type": "object",
             "properties": {
@@ -289,14 +300,6 @@ const docTemplate = `{
                 },
                 "password": {
                     "type": "string"
-                }
-            }
-        },
-        "entities.UserCreateResponse": {
-            "type": "object",
-            "properties": {
-                "id": {
-                    "type": "integer"
                 }
             }
         },

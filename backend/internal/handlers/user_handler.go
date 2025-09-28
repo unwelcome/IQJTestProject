@@ -11,10 +11,11 @@ import (
 
 type UserHandler struct {
 	userService *services.UserService
+	authService *services.AuthService
 }
 
-func NewUserHandler(userService *services.UserService) *UserHandler {
-	return &UserHandler{userService: userService}
+func NewUserHandler(userService *services.UserService, authService *services.AuthService) *UserHandler {
+	return &UserHandler{userService: userService, authService: authService}
 }
 
 // CreateUser
@@ -24,7 +25,7 @@ func NewUserHandler(userService *services.UserService) *UserHandler {
 // @Accept json
 // @Produce json
 // @Param user body entities.UserCreateRequest true "Данные пользователя"
-// @Success 201 {object} entities.UserCreateResponse
+// @Success 201 {object} entities.TokenPair
 // @Failure 400 {object} entities.ErrorEntity
 // @Failure 500 {object} entities.ErrorEntity
 // @Router /user/create [post]
@@ -44,7 +45,13 @@ func (h *UserHandler) CreateUser(c *fiber.Ctx) error {
 	if err != nil {
 		return c.Status(500).JSON(fiber.Map{"error": err.Error()})
 	}
-	return c.Status(201).JSON(userCreateResponse)
+
+	tokenPair, err := h.authService.CreateTokens(ctx, userCreateResponse.ID)
+	if err != nil {
+		return c.Status(500).JSON(fiber.Map{"error": err.Error()})
+	}
+
+	return c.Status(201).JSON(tokenPair)
 }
 
 // GetUserByID

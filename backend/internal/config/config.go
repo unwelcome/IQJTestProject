@@ -5,6 +5,7 @@ import (
 	"github.com/joho/godotenv"
 	"github.com/rs/zerolog"
 	"os"
+	"time"
 )
 
 type Config struct {
@@ -25,6 +26,10 @@ type Config struct {
 	S3User     string
 	S3Password string
 	S3Bucket   string
+
+	JWTSecret            string
+	AccessTokenLifetime  time.Duration
+	RefreshTokenLifetime time.Duration
 }
 
 func LoadConfig(l zerolog.Logger) *Config {
@@ -61,6 +66,11 @@ func LoadConfig(l zerolog.Logger) *Config {
 		cfg.CacheHost = getEnv("REDIS_HOST", "redis")
 		cfg.S3Host = getEnv("MINIO_HOST", "minio")
 	}
+
+	// Инициализируем jwt секрет
+	cfg.JWTSecret = getEnv("JWT_SECRET", "ultra-secret-key")
+	cfg.AccessTokenLifetime = 5 * time.Minute
+	cfg.RefreshTokenLifetime = 30 * 24 * time.Hour
 
 	l.Trace().Str("DBHost", cfg.DBHost).Str("DBPort", cfg.DBPort).Msg("Postgres config")
 	l.Trace().Str("CacheHost", cfg.CacheHost).Str("CachePort", cfg.CachePort).Msg("Redis config")

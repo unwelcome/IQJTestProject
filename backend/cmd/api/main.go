@@ -36,6 +36,9 @@ func main() {
 	postgres := postgresql.Connect(cfg, logger)
 	defer postgres.Close()
 
+	//TODO
+	//[] избавиться от обертки у postgres
+
 	// Подключение к redis
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
@@ -46,7 +49,7 @@ func main() {
 	app := fiber.New()
 
 	// Создание контейнера с dependency injection
-	container := dependency_injection.NewContainer(postgres.DB, logger)
+	container := dependency_injection.NewContainer(postgres.DB, redis, cfg, logger)
 
 	// Инициализация роутов
 	routes.SetupRoutes(app, container)
