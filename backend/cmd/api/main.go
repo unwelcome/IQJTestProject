@@ -1,14 +1,17 @@
 package main
 
 import (
+	"context"
 	"github.com/gofiber/fiber/v2"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	_ "github.com/unwelcome/iqjtest/api/docs"
 	"github.com/unwelcome/iqjtest/database/postgresql"
+	"github.com/unwelcome/iqjtest/database/redis"
 	"github.com/unwelcome/iqjtest/internal/config"
 	"github.com/unwelcome/iqjtest/internal/dependency_injection"
 	"github.com/unwelcome/iqjtest/internal/routes"
+	"time"
 )
 
 // @title           IQJ Test Task
@@ -31,6 +34,13 @@ func main() {
 
 	// Подключение к postgresql
 	postgres := postgresql.Connect(cfg, logger)
+	defer postgres.Close()
+
+	// Подключение к redis
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	redis := redis.Connect(ctx, cfg, logger)
+	defer redis.Close()
 
 	// Инициализация fiber
 	app := fiber.New()

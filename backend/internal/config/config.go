@@ -18,6 +18,7 @@ type Config struct {
 	CachePort     string
 	CacheUser     string
 	CachePassword string
+	CacheDBName   string
 
 	S3Host     string
 	S3Port     string
@@ -45,6 +46,7 @@ func LoadConfig(l zerolog.Logger) *Config {
 	cfg.CachePort = getEnv("REDIS_PORT", "6379")
 	cfg.CacheUser = getEnv("REDIS_USER", "redis")
 	cfg.CachePassword = getEnv("REDIS_PASSWORD", "redis")
+	cfg.CacheDBName = getEnv("REDIS_DB", "0")
 
 	// Инициализируем данные из env файла для s3 хранилища
 	cfg.S3Host = "localhost"
@@ -71,6 +73,11 @@ func LoadConfig(l zerolog.Logger) *Config {
 func (c *Config) DBConnString() string {
 	return fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable",
 		c.DBHost, c.DBPort, c.DBUser, c.DBPassword, c.DBName)
+}
+
+func (c *Config) CacheConnString() string {
+	//"redis://<user>:<pass>@localhost:6379/<db>"
+	return fmt.Sprintf("redis://%s:%s@%s:%s/%s", c.CacheUser, c.CachePassword, c.CacheHost, c.CachePort, c.CacheDBName)
 }
 
 func getEnv(key, defaultValue string) string {
