@@ -11,47 +11,10 @@ import (
 
 type UserHandler struct {
 	userService *services.UserService
-	authService *services.AuthService
 }
 
-func NewUserHandler(userService *services.UserService, authService *services.AuthService) *UserHandler {
-	return &UserHandler{userService: userService, authService: authService}
-}
-
-// CreateUser
-// @Summary Создание пользователя
-// @Description Создает нового пользователя в системе
-// @Tags users
-// @Accept json
-// @Produce json
-// @Param user body entities.UserCreateRequest true "Данные пользователя"
-// @Success 201 {object} entities.TokenPair
-// @Failure 400 {object} entities.ErrorEntity
-// @Failure 500 {object} entities.ErrorEntity
-// @Router /user/create [post]
-func (h *UserHandler) CreateUser(c *fiber.Ctx) error {
-	// Ограничение времени выполнения
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-
-	// Парсинг данных из тела запроса
-	userCreateRequest := &entities.UserCreateRequest{}
-	if err := c.BodyParser(&userCreateRequest); err != nil {
-		return c.Status(400).JSON(fiber.Map{"error": "Invalid input"})
-	}
-
-	// Создание пользователя
-	userCreateResponse, err := h.userService.CreateUser(ctx, userCreateRequest)
-	if err != nil {
-		return c.Status(500).JSON(fiber.Map{"error": err.Error()})
-	}
-
-	tokenPair, err := h.authService.CreateTokens(ctx, userCreateResponse.ID)
-	if err != nil {
-		return c.Status(500).JSON(fiber.Map{"error": err.Error()})
-	}
-
-	return c.Status(201).JSON(tokenPair)
+func NewUserHandler(userService *services.UserService) *UserHandler {
+	return &UserHandler{userService: userService}
 }
 
 // GetUserByID
@@ -163,6 +126,9 @@ func (h *UserHandler) UpdateUserPassword(c *fiber.Ctx) error {
 
 	return c.Status(200).JSON(&entities.UserUpdatePasswordResponse{ID: userUpdatePasswordRequest.ID})
 }
+
+//TODO
+// убрать DeleteUser в AuthHandler
 
 // DeleteUser
 // @Summary удаление пользователя

@@ -1,5 +1,9 @@
 package entities
 
+import (
+	"github.com/golang-jwt/jwt/v5"
+)
+
 type AccessToken struct {
 	Token string `json:"access_token" cookie:"access_token"`
 }
@@ -10,4 +14,14 @@ type RefreshToken struct {
 type TokenPair struct {
 	AccessToken  string `json:"access_token" cookie:"access_token"`
 	RefreshToken string `json:"refresh_token" cookie:"refresh_token"`
+}
+
+type RefreshTokenRequest struct {
+	RefreshToken string `json:"refresh_token" cookie:"refresh_token"`
+}
+
+type TokenClaims struct {
+	UserID int    `json:"user_id"`
+	Type   string `json:"type"`
+	jwt.RegisteredClaims
 }

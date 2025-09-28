@@ -60,11 +60,11 @@ func (c *Container) InitRepositories(postgres *sql.DB, redis *redis.Client) {
 
 func (c *Container) InitServices(cfg *config.Config) {
 	c.userService = services.NewUserService(c.userRepository)
-	c.authService = services.NewAuthService(c.authRepository, cfg.JWTSecret, cfg.AccessTokenLifetime, cfg.RefreshTokenLifetime)
+	c.authService = services.NewAuthService(c.userService, c.authRepository, cfg.JWTSecret, cfg.AccessTokenLifetime, cfg.RefreshTokenLifetime)
 }
 
 func (c *Container) InitHandlers() {
 	c.HealthHandler = handlers.NewHealthHandler()
-	c.UserHandler = handlers.NewUserHandler(c.userService, c.authService)
+	c.UserHandler = handlers.NewUserHandler(c.userService)
 	c.AuthHandler = handlers.NewAuthHandler(c.authService)
 }

@@ -37,6 +37,18 @@ func (r *UserRepository) GetUserByID(ctx context.Context, id int) (*entities.Use
 	return user, nil
 }
 
+func (r *UserRepository) GetUserByLogin(ctx context.Context, login string) (*entities.User, error) {
+	query := `SELECT id, password_hash FROM users WHERE login = $1`
+
+	row := r.db.QueryRowContext(ctx, query, login)
+	user := &entities.User{Login: login}
+	err := row.Scan(&user.ID, &user.PasswordHash)
+	if err != nil {
+		return nil, err
+	}
+	return user, nil
+}
+
 func (r *UserRepository) GetAllUsers(ctx context.Context) ([]*entities.UserGet, error) {
 	query := `SELECT id, login, created_at FROM users`
 

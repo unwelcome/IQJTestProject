@@ -7,37 +7,79 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/unwelcome/iqjtest/internal/entities"
 	"github.com/unwelcome/iqjtest/internal/repositories"
-	"strconv"
 	"time"
 )
 
+const (
+	AccessTokenType  = "access_token"
+	RefreshTokenType = "refresh_token"
+)
+
 type AuthService struct {
-	tokenRepository      *repositories.AuthRepository
+	userService     *UserService
+	tokenRepository *repositories.AuthRepository
+
 	secretKey            string
 	accessTokenLifetime  time.Duration
 	refreshTokenLifetime time.Duration
-	tokenID              int
+
+	tokenID int
 }
 
-func NewAuthService(tokenRepository *repositories.AuthRepository, secretKey string, accessTokenLifetime time.Duration, refreshTokenLifetime time.Duration) *AuthService {
+func NewAuthService(userService *UserService, tokenRepository *repositories.AuthRepository, secretKey string, accessTokenLifetime time.Duration, refreshTokenLifetime time.Duration) *AuthService {
 	return &AuthService{
-		tokenRepository:      tokenRepository,
+		userService:     userService,
+		tokenRepository: tokenRepository,
+
 		secretKey:            secretKey,
 		accessTokenLifetime:  accessTokenLifetime,
 		refreshTokenLifetime: refreshTokenLifetime,
-		tokenID:              1,
+
+		tokenID: 1,
 	}
 }
 
-func (s *AuthService) CreateTokens(ctx context.Context, userID int) (*entities.TokenPair, error) {
+func (s *AuthService) RegistrationUser(ctx context.Context, userCreate *entities.UserCreateRequest) (*entities.TokenPair, error) {
+	// Создаем пользователя
+	userID, err := s.userService.CreateUser(ctx, userCreate)
+	if err != nil {
+		return nil, err
+	}
+
+	// Генерируем пару access и refresh токенов
+	tokenPair, err := s.CreateTokens(userID)
+	if err != nil {
+		return nil, err
+	}
+
+	return tokenPair, nil
+}
+
+func (s *AuthService) LoginUser(ctx context.Context, userLogin *entities.UserLoginRequest) (*entities.TokenPair, error) {
+	// Проверяем, есть ли пользователь с таким логином в системе
+	userID, err := s.userService.LoginUser(ctx, userLogin)
+	if err != nil {
+		return nil, err
+	}
+
+	// Генерируем токены
+	tokenPair, err := s.CreateTokens(userID)
+	if err != nil {
+		return nil, err
+	}
+
+	return tokenPair, nil
+}
+
+func (s *AuthService) CreateTokens(userID int) (*entities.TokenPair, error) {
 	// Генерируем access токен
-	accessToken, err := s.CreateToken(ctx, strconv.Itoa(userID), s.accessTokenLifetime)
+	accessToken, err := s.GenerateToken(userID, true)
 	if err != nil {
 		return nil, err
 	}
 
 	// Генерируем refresh токен
-	refreshToken, err := s.CreateToken(ctx, strconv.Itoa(userID), s.refreshTokenLifetime)
+	refreshToken, err := s.GenerateToken(userID, false)
 	if err != nil {
 		return nil, err
 	}
@@ -46,42 +88,57 @@ func (s *AuthService) CreateTokens(ctx context.Context, userID int) (*entities.T
 	return &entities.TokenPair{AccessToken: accessToken, RefreshToken: refreshToken}, nil
 }
 
-func (s *AuthService) RefreshToken(ctx context.Context, refreshToken string) (*entities.TokenPair, error) {
+func (s *AuthService) RefreshToken(refreshToken string) (*entities.TokenPair, error) {
 	// Получаем данные из refresh токена
-	refreshTokenClaims, err := s.ParseToken(ctx, refreshToken)
+	refreshTokenClaims, err := s.ParseToken(refreshToken)
 	if err != nil {
-		return nil, err
+		return nil, errors.New("incorrect refresh token")
+	}
+
+	if refreshTokenClaims.Type != RefreshTokenType {
+		return nil, errors.New("not a refresh token")
 	}
 
 	// Создаем новый access токен
-	newAccessToken, err := s.CreateToken(ctx, refreshTokenClaims.Subject, s.accessTokenLifetime)
+	newAccessToken, err := s.GenerateToken(refreshTokenClaims.UserID, true)
 	if err != nil {
-		return nil, err
+		return nil, errors.New("failed to create access token")
 	}
 
 	// Создаем новый refresh токен
-	newRefreshToken, err := s.CreateToken(ctx, refreshTokenClaims.Subject, s.refreshTokenLifetime)
+	newRefreshToken, err := s.GenerateToken(refreshTokenClaims.UserID, false)
 	if err != nil {
-		return nil, err
+		return nil, errors.New("failed to create refresh token")
 	}
 
 	return &entities.TokenPair{AccessToken: newAccessToken, RefreshToken: newRefreshToken}, nil
 }
 
 // Создание jwt токена
-func (s *AuthService) CreateToken(ctx context.Context, userID string, tokenLifetime time.Duration) (string, error) {
+func (s *AuthService) GenerateToken(userID int, isAccessToken bool) (string, error) {
+	// Время создания токена
 	now := time.Now()
-	claims := &jwt.RegisteredClaims{
-		Issuer:    "iqjtest-auth-server",
-		Subject:   userID,
-		Audience:  jwt.ClaimStrings{"iqjtest-api"},
-		ExpiresAt: jwt.NewNumericDate(now.Add(tokenLifetime)),
-		NotBefore: jwt.NewNumericDate(now),
-		IssuedAt:  jwt.NewNumericDate(now),
-		ID:        fmt.Sprintf("token-%d", s.tokenID),
+
+	// Определяем тип токена
+	tokenLifetime := s.accessTokenLifetime
+	tokenType := AccessTokenType
+	if !isAccessToken {
+		tokenLifetime = s.refreshTokenLifetime
+		tokenType = RefreshTokenType
+	}
+
+	// Тело токена
+	claims := &entities.TokenClaims{
+		UserID: userID,
+		Type:   tokenType,
+		RegisteredClaims: jwt.RegisteredClaims{
+			ExpiresAt: jwt.NewNumericDate(now.Add(tokenLifetime)),
+			ID:        fmt.Sprintf("token-%d", s.tokenID),
+		},
 	}
 	s.tokenID++
 
+	// Подписываем токен
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	tokenString, err := token.SignedString([]byte(s.secretKey))
 	if err != nil {
@@ -92,13 +149,19 @@ func (s *AuthService) CreateToken(ctx context.Context, userID string, tokenLifet
 }
 
 // Парсинг jwt токена
-func (s *AuthService) ParseToken(ctx context.Context, tokenString string) (*jwt.RegisteredClaims, error) {
-	parsedToken, _ := jwt.ParseWithClaims(tokenString, &jwt.RegisteredClaims{}, func(token *jwt.Token) (interface{}, error) {
-		return s.secretKey, nil
+func (s *AuthService) ParseToken(tokenString string) (*entities.TokenClaims, error) {
+	// Подтверждение подлинности токена
+	token, err := jwt.ParseWithClaims(tokenString, &entities.TokenClaims{}, func(token *jwt.Token) (any, error) {
+		return []byte(s.secretKey), nil
 	})
+	if err != nil {
+		return nil, errors.New("can't verify token")
+	}
 
-	if claims, ok := parsedToken.Claims.(*jwt.RegisteredClaims); ok {
+	// Парсинг тела токена
+	if claims, ok := token.Claims.(*entities.TokenClaims); ok {
 		return claims, nil
 	}
+
 	return nil, errors.New("invalid token")
 }

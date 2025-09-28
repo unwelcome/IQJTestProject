@@ -13,17 +13,9 @@ type UserCreateRequest struct {
 	Password string `json:"password"`
 }
 
-type UserCreateResponse struct {
-	ID int `json:"id" db:"id"`
-}
-
 type UserLoginRequest struct {
 	Login    string `json:"login"`
 	Password string `json:"password"`
-}
-
-type UserLoginResponse struct {
-	ID int `json:"id" db:"id"`
 }
 
 type UserGet struct {

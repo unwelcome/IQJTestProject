@@ -5,6 +5,11 @@ definitions:
       error:
         type: string
     type: object
+  entities.RefreshTokenRequest:
+    properties:
+      refresh_token:
+        type: string
+    type: object
   entities.TokenPair:
     properties:
       access_token:
@@ -26,6 +31,13 @@ definitions:
       id:
         type: integer
       login:
+        type: string
+    type: object
+  entities.UserLoginRequest:
+    properties:
+      login:
+        type: string
+      password:
         type: string
     type: object
   entities.UserUpdateLoginRequest:
@@ -59,6 +71,97 @@ info:
   title: IQJ Test Task
   version: "1.0"
 paths:
+  /auth/refresh:
+    post:
+      consumes:
+      - application/json
+      description: Обновляет access и refresh токены
+      parameters:
+      - description: Refresh токен
+        in: body
+        name: user
+        required: true
+        schema:
+          $ref: '#/definitions/entities.RefreshTokenRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/entities.TokenPair'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/entities.ErrorEntity'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/entities.ErrorEntity'
+      summary: Обновление токенов
+      tags:
+      - auth
+  /login:
+    post:
+      consumes:
+      - application/json
+      description: Вход в аккаунт пользователя, возвращает access и refresh токены
+      parameters:
+      - description: Данные пользователя
+        in: body
+        name: user
+        required: true
+        schema:
+          $ref: '#/definitions/entities.UserLoginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entities.TokenPair'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/entities.ErrorEntity'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/entities.ErrorEntity'
+      summary: Вход в аккаунт пользователя
+      tags:
+      - auth
+  /register:
+    post:
+      consumes:
+      - application/json
+      description: Создает нового пользователя в системе и возвращает access и refresh
+        токены
+      parameters:
+      - description: Данные пользователя
+        in: body
+        name: user
+        required: true
+        schema:
+          $ref: '#/definitions/entities.UserCreateRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/entities.TokenPair'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/entities.ErrorEntity'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/entities.ErrorEntity'
+      summary: Создание пользователя
+      tags:
+      - auth
   /user/{id}:
     delete:
       consumes:
@@ -135,36 +238,6 @@ paths:
           schema:
             $ref: '#/definitions/entities.ErrorEntity'
       summary: получение всех пользователей
-      tags:
-      - users
-  /user/create:
-    post:
-      consumes:
-      - application/json
-      description: Создает нового пользователя в системе
-      parameters:
-      - description: Данные пользователя
-        in: body
-        name: user
-        required: true
-        schema:
-          $ref: '#/definitions/entities.UserCreateRequest'
-      produces:
-      - application/json
-      responses:
-        "201":
-          description: Created
-          schema:
-            $ref: '#/definitions/entities.TokenPair'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/entities.ErrorEntity'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/entities.ErrorEntity'
-      summary: Создание пользователя
       tags:
       - users
   /user/login:

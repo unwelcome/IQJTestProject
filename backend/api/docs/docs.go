@@ -15,9 +15,9 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
-        "/user/all": {
-            "get": {
-                "description": "получение всех пользователей",
+        "/auth/refresh": {
+            "post": {
+                "description": "Обновляет access и refresh токены",
                 "consumes": [
                     "application/json"
                 ],
@@ -25,17 +25,31 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "users"
+                    "auth"
                 ],
-                "summary": "получение всех пользователей",
-                "responses": {
-                    "200": {
-                        "description": "OK",
+                "summary": "Обновление токенов",
+                "parameters": [
+                    {
+                        "description": "Refresh токен",
+                        "name": "user",
+                        "in": "body",
+                        "required": true,
                         "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/entities.UserGet"
-                            }
+                            "$ref": "#/definitions/entities.RefreshTokenRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/entities.TokenPair"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/entities.ErrorEntity"
                         }
                     },
                     "500": {
@@ -47,9 +61,9 @@ const docTemplate = `{
                 }
             }
         },
-        "/user/create": {
+        "/login": {
             "post": {
-                "description": "Создает нового пользователя в системе",
+                "description": "Вход в аккаунт пользователя, возвращает access и refresh токены",
                 "consumes": [
                     "application/json"
                 ],
@@ -57,7 +71,53 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "users"
+                    "auth"
+                ],
+                "summary": "Вход в аккаунт пользователя",
+                "parameters": [
+                    {
+                        "description": "Данные пользователя",
+                        "name": "user",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/entities.UserLoginRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/entities.TokenPair"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/entities.ErrorEntity"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/entities.ErrorEntity"
+                        }
+                    }
+                }
+            }
+        },
+        "/register": {
+            "post": {
+                "description": "Создает нового пользователя в системе и возвращает access и refresh токены",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "auth"
                 ],
                 "summary": "Создание пользователя",
                 "parameters": [
@@ -82,6 +142,38 @@ const docTemplate = `{
                         "description": "Bad Request",
                         "schema": {
                             "$ref": "#/definitions/entities.ErrorEntity"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/entities.ErrorEntity"
+                        }
+                    }
+                }
+            }
+        },
+        "/user/all": {
+            "get": {
+                "description": "получение всех пользователей",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "users"
+                ],
+                "summary": "получение всех пользователей",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/entities.UserGet"
+                            }
                         }
                     },
                     "500": {
@@ -281,6 +373,14 @@ const docTemplate = `{
                 }
             }
         },
+        "entities.RefreshTokenRequest": {
+            "type": "object",
+            "properties": {
+                "refresh_token": {
+                    "type": "string"
+                }
+            }
+        },
         "entities.TokenPair": {
             "type": "object",
             "properties": {
@@ -313,6 +413,17 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "login": {
+                    "type": "string"
+                }
+            }
+        },
+        "entities.UserLoginRequest": {
+            "type": "object",
+            "properties": {
+                "login": {
+                    "type": "string"
+                },
+                "password": {
                     "type": "string"
                 }
             }

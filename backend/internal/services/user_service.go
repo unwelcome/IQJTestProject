@@ -19,17 +19,17 @@ func NewUserService(userRepository *repositories.UserRepository) *UserService {
 	return &UserService{userRepository: userRepository}
 }
 
-func (s *UserService) CreateUser(ctx context.Context, userCreate *entities.UserCreateRequest) (*entities.UserCreateResponse, error) {
+func (s *UserService) CreateUser(ctx context.Context, userCreate *entities.UserCreateRequest) (int, error) {
 	// Переводим пароль из строки в срез байт
 	bytePassword := []byte(userCreate.Password)
 	if len(bytePassword) >= 70 { // Больше 72 байт библиотека не захеширует
-		return nil, errors.New("password too long")
+		return 0, errors.New("password too long")
 	}
 
 	// Хешируем пароль
 	passwordHash, err := bcrypt.GenerateFromPassword(bytePassword, bcryptCost)
 	if err != nil {
-		return nil, err
+		return 0, err
 	}
 
 	// Создаем пользователя
@@ -38,9 +38,23 @@ func (s *UserService) CreateUser(ctx context.Context, userCreate *entities.UserC
 	// Добавляем пользователя в бд
 	err = s.userRepository.CreateUser(ctx, user)
 	if err != nil {
-		return nil, err
+		return 0, err
 	}
-	return &entities.UserCreateResponse{ID: user.ID}, nil
+	return user.ID, nil
+}
+
+func (s *UserService) LoginUser(ctx context.Context, userLogin *entities.UserLoginRequest) (int, error) {
+	// Получаем пользователя с данным логином
+	userWithLogin, err := s.userRepository.GetUserByLogin(ctx, userLogin.Login)
+	if err != nil {
+		return 0, errors.New("user not found")
+	}
+
+	// Проверяем пароль
+	if bcrypt.CompareHashAndPassword([]byte(userWithLogin.PasswordHash), []byte(userLogin.Password)) == nil {
+		return userWithLogin.ID, nil
+	}
+	return 0, errors.New("invalid password")
 }
 
 func (s *UserService) GetUserByID(ctx context.Context, id int) (*entities.UserGet, error) {
