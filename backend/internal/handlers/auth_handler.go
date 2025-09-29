@@ -88,12 +88,15 @@ func (h *AuthHandler) Login(c *fiber.Ctx) error {
 // @Failure 500 {object} entities.ErrorEntity
 // @Router /auth/refresh [post]
 func (h *AuthHandler) Refresh(c *fiber.Ctx) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
 	refreshTokenBody := &entities.RefreshTokenRequest{}
 	if err := c.BodyParser(refreshTokenBody); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": err.Error()})
 	}
 
-	tokenPair, err := h.authService.RefreshToken(refreshTokenBody.RefreshToken)
+	tokenPair, err := h.authService.RefreshToken(ctx, refreshTokenBody.RefreshToken)
 	if err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": err.Error()})
 	}

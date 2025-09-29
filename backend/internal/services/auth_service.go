@@ -52,6 +52,9 @@ func (s *AuthService) RegistrationUser(ctx context.Context, userCreate *entities
 		return nil, err
 	}
 
+	// Сохраняем refresh токен в кеш (если не получилось - не критично)
+	_ = s.tokenRepository.AddRefreshToken(ctx, userID, tokenPair.RefreshToken, s.refreshTokenLifetime)
+
 	return tokenPair, nil
 }
 
@@ -68,9 +71,49 @@ func (s *AuthService) LoginUser(ctx context.Context, userLogin *entities.UserLog
 		return nil, err
 	}
 
+	// Сохраняем refresh токен в кеш (если не получилось - не критично)
+	_ = s.tokenRepository.AddRefreshToken(ctx, userID, tokenPair.RefreshToken, s.refreshTokenLifetime)
+
 	return tokenPair, nil
 }
 
+func (s *AuthService) RefreshToken(ctx context.Context, refreshToken string) (*entities.TokenPair, error) {
+	// Получаем данные из refresh токена
+	refreshTokenClaims, err := s.ParseToken(refreshToken)
+	if err != nil {
+		return nil, errors.New("incorrect refresh token")
+	}
+
+	// Проверка типа токена
+	if refreshTokenClaims.Type != RefreshTokenType {
+		return nil, errors.New("not a refresh token")
+	}
+
+	// Проверяем, существует ли этот токен
+	err = s.tokenRepository.CheckExistsRefreshToken(ctx, refreshTokenClaims.UserID, refreshToken)
+	if err != nil {
+		return nil, err
+	}
+
+	// Создаем новый access токен
+	newAccessToken, err := s.GenerateToken(refreshTokenClaims.UserID, true)
+	if err != nil {
+		return nil, errors.New("failed to create access token")
+	}
+
+	// Создаем новый refresh токен
+	newRefreshToken, err := s.GenerateToken(refreshTokenClaims.UserID, false)
+	if err != nil {
+		return nil, errors.New("failed to create refresh token")
+	}
+
+	// Заменяем старый refresh токен на новый (если не получилось - не критично)
+	_ = s.tokenRepository.ReplaceRefreshToken(ctx, refreshTokenClaims.UserID, refreshToken, newRefreshToken, s.refreshTokenLifetime)
+
+	return &entities.TokenPair{AccessToken: newAccessToken, RefreshToken: newRefreshToken}, nil
+}
+
+// Генерация пары access и refresh токенов
 func (s *AuthService) CreateTokens(userID int) (*entities.TokenPair, error) {
 	// Генерируем access токен
 	accessToken, err := s.GenerateToken(userID, true)
@@ -86,32 +129,6 @@ func (s *AuthService) CreateTokens(userID int) (*entities.TokenPair, error) {
 
 	// Возвращаем оба токена
 	return &entities.TokenPair{AccessToken: accessToken, RefreshToken: refreshToken}, nil
-}
-
-func (s *AuthService) RefreshToken(refreshToken string) (*entities.TokenPair, error) {
-	// Получаем данные из refresh токена
-	refreshTokenClaims, err := s.ParseToken(refreshToken)
-	if err != nil {
-		return nil, errors.New("incorrect refresh token")
-	}
-
-	if refreshTokenClaims.Type != RefreshTokenType {
-		return nil, errors.New("not a refresh token")
-	}
-
-	// Создаем новый access токен
-	newAccessToken, err := s.GenerateToken(refreshTokenClaims.UserID, true)
-	if err != nil {
-		return nil, errors.New("failed to create access token")
-	}
-
-	// Создаем новый refresh токен
-	newRefreshToken, err := s.GenerateToken(refreshTokenClaims.UserID, false)
-	if err != nil {
-		return nil, errors.New("failed to create refresh token")
-	}
-
-	return &entities.TokenPair{AccessToken: newAccessToken, RefreshToken: newRefreshToken}, nil
 }
 
 // Создание jwt токена
