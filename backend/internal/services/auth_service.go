@@ -77,38 +77,21 @@ func (s *AuthService) LoginUser(ctx context.Context, userLogin *entities.UserLog
 	return tokenPair, nil
 }
 
-func (s *AuthService) RefreshToken(ctx context.Context, refreshToken string) (*entities.TokenPair, error) {
-	// Получаем данные из refresh токена
-	refreshTokenClaims, err := s.ParseToken(refreshToken)
-	if err != nil {
-		return nil, errors.New("incorrect refresh token")
-	}
-
-	// Проверка типа токена
-	if refreshTokenClaims.Type != RefreshTokenType {
-		return nil, errors.New("not a refresh token")
-	}
-
-	// Проверяем, существует ли этот токен
-	err = s.tokenRepository.CheckExistsRefreshToken(ctx, refreshTokenClaims.UserID, refreshToken)
-	if err != nil {
-		return nil, err
-	}
-
+func (s *AuthService) RefreshToken(ctx context.Context, userID int, refreshToken string) (*entities.TokenPair, error) {
 	// Создаем новый access токен
-	newAccessToken, err := s.GenerateToken(refreshTokenClaims.UserID, true)
+	newAccessToken, err := s.GenerateToken(userID, true)
 	if err != nil {
 		return nil, errors.New("failed to create access token")
 	}
 
 	// Создаем новый refresh токен
-	newRefreshToken, err := s.GenerateToken(refreshTokenClaims.UserID, false)
+	newRefreshToken, err := s.GenerateToken(userID, false)
 	if err != nil {
 		return nil, errors.New("failed to create refresh token")
 	}
 
 	// Заменяем старый refresh токен на новый (если не получилось - не критично)
-	_ = s.tokenRepository.ReplaceRefreshToken(ctx, refreshTokenClaims.UserID, refreshToken, newRefreshToken, s.refreshTokenLifetime)
+	_ = s.tokenRepository.ReplaceRefreshToken(ctx, userID, refreshToken, newRefreshToken, s.refreshTokenLifetime)
 
 	return &entities.TokenPair{AccessToken: newAccessToken, RefreshToken: newRefreshToken}, nil
 }
@@ -129,6 +112,14 @@ func (s *AuthService) ValidateRefreshToken(ctx context.Context, refreshToken str
 	}
 
 	return tokenClaims.UserID, nil
+}
+
+func (s *AuthService) DeleteRefreshToken(ctx context.Context, userID int, refreshToken string) error {
+	err := s.tokenRepository.DeleteRefreshToken(ctx, userID, refreshToken)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 // Генерация пары access и refresh токенов

@@ -66,8 +66,33 @@ info:
   title: IQJ Test Task
   version: "1.0"
 paths:
+  /auth/logout:
+    delete:
+      consumes:
+      - application/json
+      description: Удаляет refresh токен
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/entities.ErrorEntity'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/entities.ErrorEntity'
+      security:
+      - ApiKeyAuth: []
+      summary: Удаление токена
+      tags:
+      - auth
   /auth/refresh:
-    post:
+    get:
       consumes:
       - application/json
       description: Обновляет access и refresh токены

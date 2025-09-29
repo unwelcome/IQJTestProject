@@ -87,15 +87,16 @@ func (h *AuthHandler) Login(c *fiber.Ctx) error {
 // @Failure 400 {object} entities.ErrorEntity
 // @Failure 401 {object} entities.ErrorEntity
 // @Failure 500 {object} entities.ErrorEntity
-// @Router /auth/refresh [post]
+// @Router /auth/refresh [get]
 func (h *AuthHandler) Refresh(c *fiber.Ctx) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	// Получаем refresh токен из locals
+	// Получаем userID и refresh токен из locals
+	userID := c.Locals("userID").(int)
 	refreshToken := c.Locals("refreshToken").(string)
 
-	tokenPair, err := h.authService.RefreshToken(ctx, refreshToken)
+	tokenPair, err := h.authService.RefreshToken(ctx, userID, refreshToken)
 	if err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": err.Error()})
 	}
@@ -103,6 +104,28 @@ func (h *AuthHandler) Refresh(c *fiber.Ctx) error {
 	return c.Status(200).JSON(tokenPair)
 }
 
+// Logout
+// @Summary Удаление токена
+// @Description Удаляет refresh токен
+// @Tags auth
+// @Accept json
+// @Produce json
+// @Security ApiKeyAuth
+// @Success 200 {object} string
+// @Failure 401 {object} entities.ErrorEntity
+// @Failure 500 {object} entities.ErrorEntity
+// @Router /auth/logout [delete]
 func (h *AuthHandler) Logout(c *fiber.Ctx) error {
-	return nil
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	userID := c.Locals("userID").(int)
+	refreshToken := c.Locals("refreshToken").(string)
+
+	err := h.authService.DeleteRefreshToken(ctx, userID, refreshToken)
+	if err != nil {
+		return c.Status(500).JSON(fiber.Map{"error": err.Error()})
+	}
+
+	return c.Status(200).SendString("Successfully logged out")
 }
