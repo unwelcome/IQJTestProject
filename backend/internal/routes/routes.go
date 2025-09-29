@@ -13,6 +13,9 @@ func SetupRoutes(app *fiber.App, container *dependency_injection.Container) {
 	// Группировка всех api роутов
 	api := app.Group("/api")
 
+	// Проверка авторизации
+	api.Use("/auth", container.AuthMiddleware)
+
 	// Инициализация swagger
 	// swag init -o ./api/docs --dir ./cmd/api,./internal/entities,./internal/handlers
 	api.Get("/swagger/*", swagger.HandlerDefault)

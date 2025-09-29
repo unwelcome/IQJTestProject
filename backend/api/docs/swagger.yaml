@@ -5,11 +5,6 @@ definitions:
       error:
         type: string
     type: object
-  entities.RefreshTokenRequest:
-    properties:
-      refresh_token:
-        type: string
-    type: object
   entities.TokenPair:
     properties:
       access_token:
@@ -76,13 +71,6 @@ paths:
       consumes:
       - application/json
       description: Обновляет access и refresh токены
-      parameters:
-      - description: Refresh токен
-        in: body
-        name: user
-        required: true
-        schema:
-          $ref: '#/definitions/entities.RefreshTokenRequest'
       produces:
       - application/json
       responses:
@@ -94,10 +82,16 @@ paths:
           description: Bad Request
           schema:
             $ref: '#/definitions/entities.ErrorEntity'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/entities.ErrorEntity'
         "500":
           description: Internal Server Error
           schema:
             $ref: '#/definitions/entities.ErrorEntity'
+      security:
+      - ApiKeyAuth: []
       summary: Обновление токенов
       tags:
       - auth

@@ -15,6 +15,7 @@ import (
 type Container struct {
 	// Middleware
 	LoggingMiddleware func(c *fiber.Ctx) error
+	AuthMiddleware    func(c *fiber.Ctx) error
 
 	// Health
 	HealthHandler *handlers.HealthHandler
@@ -34,9 +35,6 @@ func NewContainer(postgres *sql.DB, redis *redis.Client, cfg *config.Config, log
 	// Создание контейнера
 	container := &Container{}
 
-	// Инициализация middleware
-	container.InitMiddlewares(logger)
-
 	// Инициализация репозиториев
 	container.InitRepositories(postgres, redis)
 
@@ -46,11 +44,15 @@ func NewContainer(postgres *sql.DB, redis *redis.Client, cfg *config.Config, log
 	// Инициализация хендлеров
 	container.InitHandlers()
 
+	// Инициализация middleware
+	container.InitMiddlewares(logger) // Инициализируем после инициализации сервисов
+
 	return container
 }
 
 func (c *Container) InitMiddlewares(logger zerolog.Logger) {
 	c.LoggingMiddleware = middlewares.LoggingRequest(logger)
+	c.AuthMiddleware = middlewares.AuthMiddleware(c.authService)
 }
 
 func (c *Container) InitRepositories(postgres *sql.DB, redis *redis.Client) {

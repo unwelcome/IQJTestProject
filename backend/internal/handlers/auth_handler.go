@@ -82,21 +82,20 @@ func (h *AuthHandler) Login(c *fiber.Ctx) error {
 // @Tags auth
 // @Accept json
 // @Produce json
-// @Param user body entities.RefreshTokenRequest true "Refresh токен"
+// @Security ApiKeyAuth
 // @Success 201 {object} entities.TokenPair
 // @Failure 400 {object} entities.ErrorEntity
+// @Failure 401 {object} entities.ErrorEntity
 // @Failure 500 {object} entities.ErrorEntity
 // @Router /auth/refresh [post]
 func (h *AuthHandler) Refresh(c *fiber.Ctx) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	refreshTokenBody := &entities.RefreshTokenRequest{}
-	if err := c.BodyParser(refreshTokenBody); err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": err.Error()})
-	}
+	// Получаем refresh токен из locals
+	refreshToken := c.Locals("refreshToken").(string)
 
-	tokenPair, err := h.authService.RefreshToken(ctx, refreshTokenBody.RefreshToken)
+	tokenPair, err := h.authService.RefreshToken(ctx, refreshToken)
 	if err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": err.Error()})
 	}

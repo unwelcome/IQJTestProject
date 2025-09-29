@@ -17,6 +17,11 @@ const docTemplate = `{
     "paths": {
         "/auth/refresh": {
             "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
                 "description": "Обновляет access и refresh токены",
                 "consumes": [
                     "application/json"
@@ -28,17 +33,6 @@ const docTemplate = `{
                     "auth"
                 ],
                 "summary": "Обновление токенов",
-                "parameters": [
-                    {
-                        "description": "Refresh токен",
-                        "name": "user",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/entities.RefreshTokenRequest"
-                        }
-                    }
-                ],
                 "responses": {
                     "201": {
                         "description": "Created",
@@ -48,6 +42,12 @@ const docTemplate = `{
                     },
                     "400": {
                         "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/entities.ErrorEntity"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
                         "schema": {
                             "$ref": "#/definitions/entities.ErrorEntity"
                         }
@@ -369,14 +369,6 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "error": {
-                    "type": "string"
-                }
-            }
-        },
-        "entities.RefreshTokenRequest": {
-            "type": "object",
-            "properties": {
-                "refresh_token": {
                     "type": "string"
                 }
             }

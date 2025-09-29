@@ -113,6 +113,24 @@ func (s *AuthService) RefreshToken(ctx context.Context, refreshToken string) (*e
 	return &entities.TokenPair{AccessToken: newAccessToken, RefreshToken: newRefreshToken}, nil
 }
 
+func (s *AuthService) ValidateRefreshToken(ctx context.Context, refreshToken string) (int, error) {
+	tokenClaims, err := s.ParseToken(refreshToken)
+	if err != nil {
+		return 0, errors.New("invalid refresh token")
+	}
+
+	if tokenClaims.Type != RefreshTokenType {
+		return 0, errors.New("not a refresh token")
+	}
+
+	err = s.tokenRepository.CheckExistsRefreshToken(ctx, tokenClaims.UserID, refreshToken)
+	if err != nil {
+		return 0, err
+	}
+
+	return tokenClaims.UserID, nil
+}
+
 // Генерация пары access и refresh токенов
 func (s *AuthService) CreateTokens(userID int) (*entities.TokenPair, error) {
 	// Генерируем access токен
