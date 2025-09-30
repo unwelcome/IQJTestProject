@@ -24,17 +24,7 @@ type UserGet struct {
 	CreatedAt string `json:"created_at" db:"created_at"`
 }
 
-type UserUpdateLoginRequest struct {
-	ID    int    `json:"id" db:"id"`
-	Login string `json:"login" db:"login"`
-}
-
-type UserUpdateLoginResponse struct {
-	ID int `json:"id" db:"id"`
-}
-
 type UserUpdatePasswordRequest struct {
-	ID       int    `json:"id" db:"id"`
 	Password string `json:"password" db:"password"`
 }
 

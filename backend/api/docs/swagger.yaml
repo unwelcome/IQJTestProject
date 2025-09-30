@@ -54,22 +54,8 @@ definitions:
       password:
         type: string
     type: object
-  entities.UserUpdateLoginRequest:
-    properties:
-      id:
-        type: integer
-      login:
-        type: string
-    type: object
-  entities.UserUpdateLoginResponse:
-    properties:
-      id:
-        type: integer
-    type: object
   entities.UserUpdatePasswordRequest:
     properties:
-      id:
-        type: integer
       password:
         type: string
     type: object
@@ -117,6 +103,60 @@ paths:
       summary: Удаление токена
       tags:
       - auth
+  /auth/user/{id}:
+    get:
+      consumes:
+      - application/json
+      description: получаем пользователя по ID
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entities.UserGet'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/entities.ErrorEntity'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/entities.ErrorEntity'
+      security:
+      - ApiKeyAuth: []
+      summary: получение пользователя по ID
+      tags:
+      - users
+  /auth/user/all:
+    get:
+      consumes:
+      - application/json
+      description: получение всех пользователей
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/entities.UserGet'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/entities.ErrorEntity'
+      security:
+      - ApiKeyAuth: []
+      summary: получение всех пользователей
+      tags:
+      - users
   /auth/user/delete:
     delete:
       consumes:
@@ -142,6 +182,38 @@ paths:
       summary: Удаление пользователя
       tags:
       - auth
+  /auth/user/password:
+    patch:
+      consumes:
+      - application/json
+      description: обновление пароля пользователя
+      parameters:
+      - description: Данные пользователя
+        in: body
+        name: user
+        required: true
+        schema:
+          $ref: '#/definitions/entities.UserUpdatePasswordRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entities.UserUpdatePasswordResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/entities.ErrorEntity'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/entities.ErrorEntity'
+      security:
+      - ApiKeyAuth: []
+      summary: обновление пароля пользователя
+      tags:
+      - users
   /login:
     post:
       consumes:
@@ -237,144 +309,6 @@ paths:
       summary: Создание пользователя
       tags:
       - auth
-  /user/{id}:
-    delete:
-      consumes:
-      - application/json
-      description: удаление пользователя
-      parameters:
-      - description: User ID
-        in: path
-        name: id
-        required: true
-        type: integer
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            type: string
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/entities.ErrorEntity'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/entities.ErrorEntity'
-      summary: удаление пользователя
-      tags:
-      - users
-    get:
-      consumes:
-      - application/json
-      description: получаем пользователя по ID
-      parameters:
-      - description: User ID
-        in: path
-        name: id
-        required: true
-        type: integer
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/entities.UserGet'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/entities.ErrorEntity'
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/entities.ErrorEntity'
-      summary: получение пользователя по ID
-      tags:
-      - users
-  /user/all:
-    get:
-      consumes:
-      - application/json
-      description: получение всех пользователей
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            items:
-              $ref: '#/definitions/entities.UserGet'
-            type: array
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/entities.ErrorEntity'
-      summary: получение всех пользователей
-      tags:
-      - users
-  /user/login:
-    patch:
-      consumes:
-      - application/json
-      description: обновление логина пользователя
-      parameters:
-      - description: Данные пользователя
-        in: body
-        name: user
-        required: true
-        schema:
-          $ref: '#/definitions/entities.UserUpdateLoginRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/entities.UserUpdateLoginResponse'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/entities.ErrorEntity'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/entities.ErrorEntity'
-      summary: обновление логина пользователя
-      tags:
-      - users
-  /user/password:
-    patch:
-      consumes:
-      - application/json
-      description: обновление пароля пользователя
-      parameters:
-      - description: Данные пользователя
-        in: body
-        name: user
-        required: true
-        schema:
-          $ref: '#/definitions/entities.UserUpdatePasswordRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/entities.UserUpdatePasswordResponse'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/entities.ErrorEntity'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/entities.ErrorEntity'
-      summary: обновление пароля пользователя
-      tags:
-      - users
 securityDefinitions:
   ApiKeyAuth:
     in: header

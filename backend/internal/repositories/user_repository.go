@@ -72,16 +72,6 @@ func (r *UserRepository) GetAllUsers(ctx context.Context) ([]*entities.UserGet, 
 	return users, nil
 }
 
-func (r *UserRepository) UpdateUserLogin(ctx context.Context, id int, login string) error {
-	query := `UPDATE users SET login = $1 WHERE id = $2`
-
-	_, err := r.db.ExecContext(ctx, query, login, id)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
 func (r *UserRepository) UpdateUserPassword(ctx context.Context, id int, passwordHash string) error {
 	query := `UPDATE users SET password_hash = $1 WHERE id = $2`
 

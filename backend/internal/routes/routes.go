@@ -31,8 +31,7 @@ func SetupRoutes(app *fiber.App, container *dependency_injection.Container) {
 	api.Delete("/auth/user/delete", container.AuthHandler.DeleteUser)
 
 	// User запросы
-	api.Get("/user/all", container.UserHandler.GetAllUsers)
-	api.Get("/user/:id", container.UserHandler.GetUserByID)
-	api.Patch("/user/login", container.UserHandler.UpdateUserLogin)
-	api.Patch("/user/password", container.UserHandler.UpdateUserPassword)
+	api.Get("/auth/user/all", container.UserHandler.GetAllUsers)
+	api.Get("/auth/user/:id", container.UserHandler.GetUserByID)
+	api.Patch("/auth/user/password", container.UserHandler.UpdateUserPassword)
 }

@@ -51,19 +51,20 @@ func (s *UserService) LoginUser(ctx context.Context, userLogin *entities.UserLog
 	}
 
 	// Проверяем пароль
-	if bcrypt.CompareHashAndPassword([]byte(userWithLogin.PasswordHash), []byte(userLogin.Password)) == nil {
-		return userWithLogin.ID, nil
+	if bcrypt.CompareHashAndPassword([]byte(userWithLogin.PasswordHash), []byte(userLogin.Password)) != nil {
+		return 0, errors.New("invalid password")
 	}
-	return 0, errors.New("invalid password")
+
+	return userWithLogin.ID, nil
 }
 
-func (s *UserService) GetUserByID(ctx context.Context, id int) (*entities.UserGet, error) {
-	user, err := s.userRepository.GetUserByID(ctx, id)
+func (s *UserService) GetUserByID(ctx context.Context, userID int) (*entities.UserGet, error) {
+	user, err := s.userRepository.GetUserByID(ctx, userID)
 	if err != nil {
 		return nil, err
 	}
 
-	user.ID = id
+	user.ID = userID
 	return user, nil
 }
 
@@ -76,23 +77,18 @@ func (s *UserService) GetAllUsers(ctx context.Context) ([]*entities.UserGet, err
 	return users, nil
 }
 
-func (s *UserService) UpdateUserLogin(ctx context.Context, userUpdateLoginRequest *entities.UserUpdateLoginRequest) error {
-	err := s.userRepository.UpdateUserLogin(ctx, userUpdateLoginRequest.ID, userUpdateLoginRequest.Login)
-	return err
-}
-
-func (s *UserService) UpdateUserPassword(ctx context.Context, userUpdatePasswordRequest *entities.UserUpdatePasswordRequest) error {
+func (s *UserService) UpdateUserPassword(ctx context.Context, userID int, userUpdatePasswordRequest *entities.UserUpdatePasswordRequest) error {
 	// Хешируем новый пароль
 	passwordHash, err := bcrypt.GenerateFromPassword([]byte(userUpdatePasswordRequest.Password), bcryptCost)
 	if err != nil {
 		return err
 	}
 
-	err = s.userRepository.UpdateUserPassword(ctx, userUpdatePasswordRequest.ID, string(passwordHash))
+	err = s.userRepository.UpdateUserPassword(ctx, userID, string(passwordHash))
 	return err
 }
 
-func (s *UserService) DeleteUser(ctx context.Context, id int) error {
-	err := s.userRepository.DeleteUser(ctx, id)
+func (s *UserService) DeleteUser(ctx context.Context, userID int) error {
+	err := s.userRepository.DeleteUser(ctx, userID)
 	return err
 }
