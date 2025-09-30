@@ -2,9 +2,10 @@ package middlewares
 
 import (
 	"context"
+	"time"
+
 	"github.com/gofiber/fiber/v2"
 	"github.com/unwelcome/iqjtest/internal/services"
-	"time"
 )
 
 func AuthMiddleware(authService *services.AuthService) fiber.Handler {
@@ -21,21 +22,20 @@ func AuthMiddleware(authService *services.AuthService) fiber.Handler {
 		}
 
 		// Получаем токен из заголовка
-		refreshToken := authHeader[7:]
+		accessToken := authHeader[7:]
 
 		// Создаем контекст
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
 
 		// Валидируем токен
-		userID, err := authService.ValidateAccessToken(ctx, refreshToken)
+		userID, err := authService.ValidateAccessToken(ctx, accessToken)
 		if err != nil {
-			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "Invalid refresh token"})
+			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": err.Error()})
 		}
 
-		// Устанавливаем userID и refresh_token в контекст
+		// Устанавливаем userID в контекст
 		c.Locals("userID", userID)
-		c.Locals("refreshToken", refreshToken)
 
 		return c.Next()
 	}

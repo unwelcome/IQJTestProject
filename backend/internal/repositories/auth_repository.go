@@ -2,11 +2,11 @@ package repositories
 
 import (
 	"context"
-	"errors"
 	"fmt"
+	"time"
+
 	"github.com/redis/go-redis/v9"
 	"github.com/unwelcome/iqjtest/internal/entities"
-	"time"
 )
 
 type AuthRepository struct {
@@ -23,13 +23,13 @@ func (r *AuthRepository) AddToken(ctx context.Context, userID int, token string,
 	// Добавляем токен в сет
 	err := r.redis.SAdd(ctx, key, token).Err()
 	if err != nil {
-		return errors.New(fmt.Sprintf("failed to add token: %s", err.Error()))
+		return fmt.Errorf("failed to add token: %s", err.Error())
 	}
 
 	// Устанавливаем TTL на весь сет
 	err = r.redis.Expire(ctx, key, expiresIn).Err()
 	if err != nil {
-		return errors.New(fmt.Sprintf("failed to set TTL to tokens: %s", err.Error()))
+		return fmt.Errorf("failed to set TTL to tokens: %s", err.Error())
 	}
 
 	return nil
@@ -40,16 +40,22 @@ func (r *AuthRepository) CheckExistsToken(ctx context.Context, userID int, token
 
 	exists, err := r.redis.SIsMember(ctx, key, token).Result()
 	if err != nil {
-		return errors.New(fmt.Sprintf("check exists token failed: %s", err.Error()))
+		return fmt.Errorf("check exists token failed: %s", err.Error())
 	}
 	if !exists {
-		return errors.New("token does not exist")
+		return fmt.Errorf("token does not exist")
 	}
 	return nil
 }
 
 func (r *AuthRepository) ReplaceToken(ctx context.Context, userID int, oldToken, newToken, tokenType string, expiresIn time.Duration) error {
 	key := getTokenKey(userID, tokenType)
+
+	// Проверяем наличие старого токена
+	exist, _ := r.redis.SIsMember(ctx, key, oldToken).Result()
+	if !exist {
+		return fmt.Errorf("token not found")
+	}
 
 	// Создаем транзакцию для замены токенов
 	_, err := r.redis.TxPipelined(ctx, func(pipe redis.Pipeliner) error {
@@ -66,7 +72,7 @@ func (r *AuthRepository) ReplaceToken(ctx context.Context, userID int, oldToken,
 		return nil
 	})
 	if err != nil {
-		return errors.New(fmt.Sprintf("failed to replace tokens: %s", err.Error()))
+		return fmt.Errorf("failed to replace tokens: %s", err.Error())
 	}
 
 	return nil
@@ -75,9 +81,11 @@ func (r *AuthRepository) ReplaceToken(ctx context.Context, userID int, oldToken,
 func (r *AuthRepository) DeleteToken(ctx context.Context, userID int, token string, tokenType string) error {
 	key := getTokenKey(userID, tokenType)
 
-	err := r.redis.SRem(ctx, key, token).Err()
+	value, err := r.redis.SRem(ctx, key, token).Result()
 	if err != nil {
-		return errors.New(fmt.Sprintf("failed to delete token: %s", err.Error()))
+		return fmt.Errorf("failed to delete token: %s", err.Error())
+	} else if value == 0 {
+		return fmt.Errorf("token not found")
 	}
 	return nil
 }
@@ -87,14 +95,14 @@ func (r *AuthRepository) DeleteAllTokens(ctx context.Context, userID int) error 
 	key := getTokenKey(userID, entities.AccessTokenType)
 	err := r.redis.Del(ctx, key).Err()
 	if err != nil {
-		return errors.New(fmt.Sprintf("failed to delete all access tokens: %s", err.Error()))
+		return fmt.Errorf("failed to delete all access tokens: %s", err.Error())
 	}
 
 	// Удаляем все refresh токены
 	key = getTokenKey(userID, entities.RefreshTokenType)
 	err = r.redis.Del(ctx, key).Err()
 	if err != nil {
-		return errors.New(fmt.Sprintf("failed to delete all refresh tokens: %s", err.Error()))
+		return fmt.Errorf("failed to delete all refresh tokens: %s", err.Error())
 	}
 
 	return nil

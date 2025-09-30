@@ -25,6 +25,10 @@ type RefreshTokenRequest struct {
 	RefreshToken string `json:"refresh_token" cookie:"refresh_token"`
 }
 
+type LogoutTokenRequest struct {
+	RefreshToken string `json:"refresh_token" cookie:"refresh_token"`
+}
+
 type TokenClaims struct {
 	UserID int    `json:"user_id"`
 	Type   string `json:"type"`

@@ -5,6 +5,16 @@ definitions:
       error:
         type: string
     type: object
+  entities.LogoutTokenRequest:
+    properties:
+      refresh_token:
+        type: string
+    type: object
+  entities.RefreshTokenRequest:
+    properties:
+      refresh_token:
+        type: string
+    type: object
   entities.TokenPair:
     properties:
       access_token:
@@ -71,6 +81,13 @@ paths:
       consumes:
       - application/json
       description: Удаляет refresh токен
+      parameters:
+      - description: Refresh токен
+        in: body
+        name: token
+        required: true
+        schema:
+          $ref: '#/definitions/entities.LogoutTokenRequest'
       produces:
       - application/json
       responses:
@@ -91,22 +108,18 @@ paths:
       summary: Удаление токена
       tags:
       - auth
-  /auth/refresh:
-    get:
+  /auth/user/delete:
+    delete:
       consumes:
       - application/json
-      description: Обновляет access и refresh токены
+      description: Удаляет пользователя из системы и отзывает все refresh токены
       produces:
       - application/json
       responses:
-        "201":
-          description: Created
+        "200":
+          description: OK
           schema:
-            $ref: '#/definitions/entities.TokenPair'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/entities.ErrorEntity'
+            type: string
         "401":
           description: Unauthorized
           schema:
@@ -117,7 +130,7 @@ paths:
             $ref: '#/definitions/entities.ErrorEntity'
       security:
       - ApiKeyAuth: []
-      summary: Обновление токенов
+      summary: Удаление пользователя
       tags:
       - auth
   /login:
@@ -148,6 +161,40 @@ paths:
           schema:
             $ref: '#/definitions/entities.ErrorEntity'
       summary: Вход в аккаунт пользователя
+      tags:
+      - auth
+  /refresh:
+    post:
+      consumes:
+      - application/json
+      description: Обновляет access и refresh токены
+      parameters:
+      - description: Refresh токен
+        in: body
+        name: token
+        required: true
+        schema:
+          $ref: '#/definitions/entities.RefreshTokenRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/entities.TokenPair'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/entities.ErrorEntity'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/entities.ErrorEntity'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/entities.ErrorEntity'
+      summary: Обновление токенов
       tags:
       - auth
   /register:

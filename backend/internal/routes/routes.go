@@ -26,13 +26,13 @@ func SetupRoutes(app *fiber.App, container *dependency_injection.Container) {
 	// Auth запросы
 	api.Post("/register", container.AuthHandler.Register)
 	api.Post("/login", container.AuthHandler.Login)
-	api.Get("/auth/refresh", container.AuthHandler.Refresh)
+	api.Post("/refresh", container.AuthHandler.Refresh)
 	api.Delete("/auth/logout", container.AuthHandler.Logout)
+	api.Delete("/auth/user/delete", container.AuthHandler.DeleteUser)
 
 	// User запросы
 	api.Get("/user/all", container.UserHandler.GetAllUsers)
 	api.Get("/user/:id", container.UserHandler.GetUserByID)
 	api.Patch("/user/login", container.UserHandler.UpdateUserLogin)
 	api.Patch("/user/password", container.UserHandler.UpdateUserPassword)
-	api.Delete("/user/:id", container.UserHandler.DeleteUser)
 }

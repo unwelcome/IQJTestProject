@@ -4,10 +4,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
+
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/unwelcome/iqjtest/internal/entities"
 	"github.com/unwelcome/iqjtest/internal/repositories"
-	"time"
 )
 
 type AuthService struct {
@@ -72,15 +73,29 @@ func (s *AuthService) LoginUser(ctx context.Context, userLogin *entities.UserLog
 	return tokenPair, nil
 }
 
-func (s *AuthService) RefreshToken(ctx context.Context, userID int, refreshToken string) (*entities.TokenPair, error) {
+func (s *AuthService) RefreshToken(ctx context.Context, refreshToken string) (*entities.TokenPair, error) {
+	// Парсим refresh токен
+	tokenClaims, err := ParseToken(refreshToken, s.secretKey)
+	if err != nil {
+		return nil, fmt.Errorf("invalid refresh token")
+	}
+
+	// Проверяем тип токена
+	if tokenClaims.Type != entities.RefreshTokenType {
+		return nil, fmt.Errorf("invalid token type")
+	}
+
 	// Создаем новую пару токенов
-	tokenPair, err := CreateTokens(userID, s)
+	tokenPair, err := CreateTokens(tokenClaims.UserID, s)
 	if err != nil {
 		return nil, errors.New("failed to create new tokens")
 	}
 
-	// Заменяем старый refresh токен на новый (если не получилось - не критично)
-	_ = s.tokenRepository.ReplaceToken(ctx, userID, refreshToken, tokenPair.RefreshToken, entities.RefreshTokenType, s.refreshTokenLifetime)
+	// Заменяем старый refresh токен на новый
+	err = s.tokenRepository.ReplaceToken(ctx, tokenClaims.UserID, refreshToken, tokenPair.RefreshToken, entities.RefreshTokenType, s.refreshTokenLifetime)
+	if err != nil {
+		return nil, err
+	}
 
 	return tokenPair, nil
 }
@@ -88,17 +103,12 @@ func (s *AuthService) RefreshToken(ctx context.Context, userID int, refreshToken
 func (s *AuthService) ValidateAccessToken(ctx context.Context, accessToken string) (int, error) {
 	tokenClaims, err := ParseToken(accessToken, s.secretKey)
 	if err != nil {
-		return 0, errors.New("invalid access token")
+		return 0, err
 	}
 
 	if tokenClaims.Type != entities.AccessTokenType {
-		return 0, errors.New("not a access token")
+		return 0, errors.New("invalid token type")
 	}
-
-	//err = s.tokenRepository.CheckExistsToken(ctx, tokenClaims.UserID, accessToken, entities.AccessTokenType)
-	//if err != nil {
-	//	return 0, err
-	//}
 
 	return tokenClaims.UserID, nil
 }
@@ -179,6 +189,9 @@ func ParseToken(tokenString string, secretKey string) (*entities.TokenClaims, er
 		return []byte(secretKey), nil
 	})
 	if err != nil {
+		if errors.Is(err, jwt.ErrTokenExpired) {
+			return nil, errors.New("token expired")
+		}
 		return nil, errors.New("can't verify token")
 	}
 

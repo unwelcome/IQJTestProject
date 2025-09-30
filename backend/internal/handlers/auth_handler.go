@@ -2,10 +2,11 @@ package handlers
 
 import (
 	"context"
+	"time"
+
 	"github.com/gofiber/fiber/v2"
 	"github.com/unwelcome/iqjtest/internal/entities"
 	"github.com/unwelcome/iqjtest/internal/services"
-	"time"
 )
 
 type AuthHandler struct {
@@ -82,21 +83,23 @@ func (h *AuthHandler) Login(c *fiber.Ctx) error {
 // @Tags auth
 // @Accept json
 // @Produce json
-// @Security ApiKeyAuth
+// @Param token body entities.RefreshTokenRequest true "Refresh токен"
 // @Success 201 {object} entities.TokenPair
 // @Failure 400 {object} entities.ErrorEntity
 // @Failure 401 {object} entities.ErrorEntity
 // @Failure 500 {object} entities.ErrorEntity
-// @Router /auth/refresh [get]
+// @Router /refresh [post]
 func (h *AuthHandler) Refresh(c *fiber.Ctx) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	// Получаем userID и refresh токен из locals
-	userID := c.Locals("userID").(int)
-	refreshToken := c.Locals("refreshToken").(string)
+	// Получаем refresh токен из тела
+	refreshTokenRequest := &entities.RefreshTokenRequest{}
+	if err := c.BodyParser(&refreshTokenRequest); err != nil {
+		return c.Status(400).JSON(fiber.Map{"error": "invalid input"})
+	}
 
-	tokenPair, err := h.authService.RefreshToken(ctx, userID, refreshToken)
+	tokenPair, err := h.authService.RefreshToken(ctx, refreshTokenRequest.RefreshToken)
 	if err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": err.Error()})
 	}
@@ -111,6 +114,7 @@ func (h *AuthHandler) Refresh(c *fiber.Ctx) error {
 // @Accept json
 // @Produce json
 // @Security ApiKeyAuth
+// @Param token body entities.LogoutTokenRequest true "Refresh токен"
 // @Success 200 {object} string
 // @Failure 401 {object} entities.ErrorEntity
 // @Failure 500 {object} entities.ErrorEntity
@@ -120,9 +124,14 @@ func (h *AuthHandler) Logout(c *fiber.Ctx) error {
 	defer cancel()
 
 	userID := c.Locals("userID").(int)
-	refreshToken := c.Locals("refreshToken").(string)
 
-	err := h.authService.DeleteRefreshToken(ctx, userID, refreshToken)
+	// Получаем refresh токен из тела
+	logoutTokenRequest := &entities.LogoutTokenRequest{}
+	if err := c.BodyParser(&logoutTokenRequest); err != nil {
+		return c.Status(400).JSON(fiber.Map{"error": "invalid input"})
+	}
+
+	err := h.authService.DeleteRefreshToken(ctx, userID, logoutTokenRequest.RefreshToken)
 	if err != nil {
 		return c.Status(500).JSON(fiber.Map{"error": err.Error()})
 	}
@@ -130,10 +139,27 @@ func (h *AuthHandler) Logout(c *fiber.Ctx) error {
 	return c.Status(200).SendString("Successfully logged out")
 }
 
+// DeleteUser
+// @Summary Удаление пользователя
+// @Description Удаляет пользователя из системы и отзывает все refresh токены
+// @Tags auth
+// @Accept json
+// @Produce json
+// @Security ApiKeyAuth
+// @Success 200 {object} string
+// @Failure 401 {object} entities.ErrorEntity
+// @Failure 500 {object} entities.ErrorEntity
+// @Router /auth/user/delete [delete]
 func (h *AuthHandler) DeleteUser(c *fiber.Ctx) error {
-	//ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	//defer cancel()
-	//
-	//userID := c.Locals("userID").(int)
-	return nil
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	userID := c.Locals("userID").(int)
+
+	err := h.authService.DeleteUser(ctx, userID)
+	if err != nil {
+		return c.Status(500).JSON(fiber.Map{"error": err.Error()})
+	}
+
+	return c.Status(200).SendString("Successfully deleted user")
 }
