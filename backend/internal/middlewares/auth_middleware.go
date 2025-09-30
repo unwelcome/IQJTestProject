@@ -28,7 +28,7 @@ func AuthMiddleware(authService *services.AuthService) fiber.Handler {
 		defer cancel()
 
 		// Валидируем токен
-		userID, err := authService.ValidateRefreshToken(ctx, refreshToken)
+		userID, err := authService.ValidateAccessToken(ctx, refreshToken)
 		if err != nil {
 			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "Invalid refresh token"})
 		}

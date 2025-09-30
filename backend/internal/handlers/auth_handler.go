@@ -129,3 +129,11 @@ func (h *AuthHandler) Logout(c *fiber.Ctx) error {
 
 	return c.Status(200).SendString("Successfully logged out")
 }
+
+func (h *AuthHandler) DeleteUser(c *fiber.Ctx) error {
+	//ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	//defer cancel()
+	//
+	//userID := c.Locals("userID").(int)
+	return nil
+}

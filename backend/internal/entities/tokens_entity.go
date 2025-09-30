@@ -4,6 +4,11 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 )
 
+const (
+	AccessTokenType  = "access_token"
+	RefreshTokenType = "refresh_token"
+)
+
 type AccessToken struct {
 	Token string `json:"access_token" cookie:"access_token"`
 }

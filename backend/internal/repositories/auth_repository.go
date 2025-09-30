@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/redis/go-redis/v9"
+	"github.com/unwelcome/iqjtest/internal/entities"
 	"time"
 )
 
@@ -16,48 +17,48 @@ func NewAuthRepository(redis *redis.Client) *AuthRepository {
 	return &AuthRepository{redis: redis}
 }
 
-func (r *AuthRepository) AddRefreshToken(ctx context.Context, userID int, refreshToken string, expiresIn time.Duration) error {
-	key := getRefreshTokenKey(userID)
+func (r *AuthRepository) AddToken(ctx context.Context, userID int, token string, tokenType string, expiresIn time.Duration) error {
+	key := getTokenKey(userID, tokenType)
 
 	// Добавляем токен в сет
-	err := r.redis.SAdd(ctx, key, refreshToken).Err()
+	err := r.redis.SAdd(ctx, key, token).Err()
 	if err != nil {
-		return errors.New(fmt.Sprintf("failed to add refresh token: %s", err.Error()))
+		return errors.New(fmt.Sprintf("failed to add token: %s", err.Error()))
 	}
 
 	// Устанавливаем TTL на весь сет
 	err = r.redis.Expire(ctx, key, expiresIn).Err()
 	if err != nil {
-		return errors.New(fmt.Sprintf("failed to set TTL to refresh tokens: %s", err.Error()))
+		return errors.New(fmt.Sprintf("failed to set TTL to tokens: %s", err.Error()))
 	}
 
 	return nil
 }
 
-func (r *AuthRepository) CheckExistsRefreshToken(ctx context.Context, userID int, refreshToken string) error {
-	key := getRefreshTokenKey(userID)
+func (r *AuthRepository) CheckExistsToken(ctx context.Context, userID int, token string, tokenType string) error {
+	key := getTokenKey(userID, tokenType)
 
-	exists, err := r.redis.SIsMember(ctx, key, refreshToken).Result()
+	exists, err := r.redis.SIsMember(ctx, key, token).Result()
 	if err != nil {
-		return errors.New(fmt.Sprintf("check exists refresh token failed: %s", err.Error()))
+		return errors.New(fmt.Sprintf("check exists token failed: %s", err.Error()))
 	}
 	if !exists {
-		return errors.New("refresh token does not exist")
+		return errors.New("token does not exist")
 	}
 	return nil
 }
 
-func (r *AuthRepository) ReplaceRefreshToken(ctx context.Context, userID int, oldRefreshToken, newRefreshToken string, expiresIn time.Duration) error {
-	key := getRefreshTokenKey(userID)
+func (r *AuthRepository) ReplaceToken(ctx context.Context, userID int, oldToken, newToken, tokenType string, expiresIn time.Duration) error {
+	key := getTokenKey(userID, tokenType)
 
 	// Создаем транзакцию для замены токенов
 	_, err := r.redis.TxPipelined(ctx, func(pipe redis.Pipeliner) error {
 
-		// Удаляем старый refresh токен
-		pipe.SRem(ctx, key, oldRefreshToken)
+		// Удаляем старый токен
+		pipe.SRem(ctx, key, oldToken)
 
-		// Добавляем новый refresh токен
-		pipe.SAdd(ctx, key, newRefreshToken)
+		// Добавляем новый токен
+		pipe.SAdd(ctx, key, newToken)
 
 		// Обновляем TTL для всего сета
 		pipe.Expire(ctx, key, expiresIn)
@@ -65,32 +66,44 @@ func (r *AuthRepository) ReplaceRefreshToken(ctx context.Context, userID int, ol
 		return nil
 	})
 	if err != nil {
-		return errors.New(fmt.Sprintf("failed to replace refresh tokens: %s", err.Error()))
+		return errors.New(fmt.Sprintf("failed to replace tokens: %s", err.Error()))
 	}
 
 	return nil
 }
 
-func (r *AuthRepository) DeleteRefreshToken(ctx context.Context, userID int, refreshToken string) error {
-	key := getRefreshTokenKey(userID)
+func (r *AuthRepository) DeleteToken(ctx context.Context, userID int, token string, tokenType string) error {
+	key := getTokenKey(userID, tokenType)
 
-	err := r.redis.SRem(ctx, key, refreshToken).Err()
+	err := r.redis.SRem(ctx, key, token).Err()
 	if err != nil {
-		return errors.New(fmt.Sprintf("failed to delete refresh token: %s", err.Error()))
+		return errors.New(fmt.Sprintf("failed to delete token: %s", err.Error()))
 	}
 	return nil
 }
 
-func (r *AuthRepository) DeleteAllRefreshTokens(ctx context.Context, userID int) error {
-	key := getRefreshTokenKey(userID)
-
+func (r *AuthRepository) DeleteAllTokens(ctx context.Context, userID int) error {
+	// Удаляем все access токены
+	key := getTokenKey(userID, entities.AccessTokenType)
 	err := r.redis.Del(ctx, key).Err()
+	if err != nil {
+		return errors.New(fmt.Sprintf("failed to delete all access tokens: %s", err.Error()))
+	}
+
+	// Удаляем все refresh токены
+	key = getTokenKey(userID, entities.RefreshTokenType)
+	err = r.redis.Del(ctx, key).Err()
 	if err != nil {
 		return errors.New(fmt.Sprintf("failed to delete all refresh tokens: %s", err.Error()))
 	}
+
 	return nil
 }
 
-func getRefreshTokenKey(userID int) string {
-	return fmt.Sprintf("user:%d:refresh_tokens", userID)
+func getTokenKey(userID int, tokenType string) string {
+	if tokenType == entities.AccessTokenType {
+		return fmt.Sprintf("user:%d:access_tokens", userID)
+	} else {
+		return fmt.Sprintf("user:%d:refresh_tokens", userID)
+	}
 }
