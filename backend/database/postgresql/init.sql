@@ -20,7 +20,6 @@ CREATE TABLE "cat_photos" (
     "id" SERIAL PRIMARY KEY,
     "cat_id" integer,
     "filename" text NOT NULL,
-    "original_filename" text,
     "filesize" integer,
     "mime_type" varchar(255),
     "created_at" timestamp,

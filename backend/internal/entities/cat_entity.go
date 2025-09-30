@@ -5,10 +5,6 @@ type Cat struct {
 	Name        string `json:"name" db:"name"`
 	Age         int    `json:"age" db:"age"`
 	Description string `json:"description" db:"description"`
-	Photos      []*CatPhoto
-}
-
-type CatPhoto struct {
-	ID  int
-	Url string
+	CreatedAt   string `json:"created_at" db:"created_at"`
+	CreatedBy   int    `json:"created_by" db:"created_by"`
 }
