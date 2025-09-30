@@ -1,5 +1,14 @@
 basePath: /api
 definitions:
+  entities.AuthResponse:
+    properties:
+      access_token:
+        type: string
+      id:
+        type: integer
+      refresh_token:
+        type: string
+    type: object
   entities.ErrorEntity:
     properties:
       error:
@@ -151,7 +160,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/entities.TokenPair'
+            $ref: '#/definitions/entities.AuthResponse'
         "400":
           description: Bad Request
           schema:
@@ -216,7 +225,7 @@ paths:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/entities.TokenPair'
+            $ref: '#/definitions/entities.AuthResponse'
         "400":
           description: Bad Request
           schema:

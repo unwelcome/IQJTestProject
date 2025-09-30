@@ -35,7 +35,7 @@ func NewAuthService(userService *UserService, tokenRepository *repositories.Auth
 	}
 }
 
-func (s *AuthService) RegistrationUser(ctx context.Context, userCreate *entities.UserCreateRequest) (*entities.TokenPair, error) {
+func (s *AuthService) RegistrationUser(ctx context.Context, userCreate *entities.UserCreateRequest) (*entities.AuthResponse, error) {
 	// Создаем пользователя
 	userID, err := s.userService.CreateUser(ctx, userCreate)
 	if err != nil {
@@ -51,11 +51,11 @@ func (s *AuthService) RegistrationUser(ctx context.Context, userCreate *entities
 	// Сохраняем refresh токен в кеш (если не получилось - не критично)
 	_ = s.tokenRepository.AddToken(ctx, userID, tokenPair.RefreshToken, entities.RefreshTokenType, s.refreshTokenLifetime)
 
-	return tokenPair, nil
+	return &entities.AuthResponse{TokenPair: tokenPair, UserID: userID}, nil
 }
 
-func (s *AuthService) LoginUser(ctx context.Context, userLogin *entities.UserLoginRequest) (*entities.TokenPair, error) {
-	// Проверяем, есть ли пользователь с таким логином в системе
+func (s *AuthService) LoginUser(ctx context.Context, userLogin *entities.UserLoginRequest) (*entities.AuthResponse, error) {
+	// Проверяем, есть ли пользователь с таким логином в системе и получаем его ID
 	userID, err := s.userService.LoginUser(ctx, userLogin)
 	if err != nil {
 		return nil, err
@@ -70,7 +70,7 @@ func (s *AuthService) LoginUser(ctx context.Context, userLogin *entities.UserLog
 	// Сохраняем refresh токен в кеш (если не получилось - не критично)
 	_ = s.tokenRepository.AddToken(ctx, userID, tokenPair.RefreshToken, entities.RefreshTokenType, s.refreshTokenLifetime)
 
-	return tokenPair, nil
+	return &entities.AuthResponse{TokenPair: tokenPair, UserID: userID}, nil
 }
 
 func (s *AuthService) RefreshToken(ctx context.Context, refreshToken string) (*entities.TokenPair, error) {

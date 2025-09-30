@@ -128,7 +128,7 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/entities.TokenPair"
+                            "$ref": "#/definitions/entities.AuthResponse"
                         }
                     },
                     "400": {
@@ -226,7 +226,7 @@
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/entities.TokenPair"
+                            "$ref": "#/definitions/entities.AuthResponse"
                         }
                     },
                     "400": {
@@ -456,6 +456,20 @@
         }
     },
     "definitions": {
+        "entities.AuthResponse": {
+            "type": "object",
+            "properties": {
+                "access_token": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "refresh_token": {
+                    "type": "string"
+                }
+            }
+        },
         "entities.ErrorEntity": {
             "type": "object",
             "properties": {

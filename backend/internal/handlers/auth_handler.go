@@ -24,7 +24,7 @@ func NewAuthHandler(authService *services.AuthService) *AuthHandler {
 // @Accept json
 // @Produce json
 // @Param user body entities.UserCreateRequest true "Данные пользователя"
-// @Success 201 {object} entities.TokenPair
+// @Success 201 {object} entities.AuthResponse
 // @Failure 400 {object} entities.ErrorEntity
 // @Failure 500 {object} entities.ErrorEntity
 // @Router /register [post]
@@ -40,12 +40,12 @@ func (h *AuthHandler) Register(c *fiber.Ctx) error {
 	}
 
 	// Регистрация пользователя и получение токенов
-	tokenPair, err := h.authService.RegistrationUser(ctx, userCreateRequest)
+	authResponse, err := h.authService.RegistrationUser(ctx, userCreateRequest)
 	if err != nil {
 		return c.Status(500).JSON(fiber.Map{"error": err.Error()})
 	}
 
-	return c.Status(201).JSON(tokenPair)
+	return c.Status(201).JSON(authResponse)
 }
 
 // Login
@@ -55,7 +55,7 @@ func (h *AuthHandler) Register(c *fiber.Ctx) error {
 // @Accept json
 // @Produce json
 // @Param user body entities.UserLoginRequest true "Данные пользователя"
-// @Success 200 {object} entities.TokenPair
+// @Success 200 {object} entities.AuthResponse
 // @Failure 400 {object} entities.ErrorEntity
 // @Failure 500 {object} entities.ErrorEntity
 // @Router /login [post]
@@ -69,12 +69,12 @@ func (h *AuthHandler) Login(c *fiber.Ctx) error {
 		return c.Status(400).JSON(fiber.Map{"error": "Invalid input"})
 	}
 
-	tokenPair, err := h.authService.LoginUser(ctx, userLoginRequest)
+	authResponse, err := h.authService.LoginUser(ctx, userLoginRequest)
 	if err != nil {
 		return c.Status(500).JSON(fiber.Map{"error": err.Error()})
 	}
 
-	return c.Status(200).JSON(tokenPair)
+	return c.Status(200).JSON(authResponse)
 }
 
 // Refresh

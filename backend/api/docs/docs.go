@@ -134,7 +134,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/entities.TokenPair"
+                            "$ref": "#/definitions/entities.AuthResponse"
                         }
                     },
                     "400": {
@@ -232,7 +232,7 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/entities.TokenPair"
+                            "$ref": "#/definitions/entities.AuthResponse"
                         }
                     },
                     "400": {
@@ -462,6 +462,20 @@ const docTemplate = `{
         }
     },
     "definitions": {
+        "entities.AuthResponse": {
+            "type": "object",
+            "properties": {
+                "access_token": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "refresh_token": {
+                    "type": "string"
+                }
+            }
+        },
         "entities.ErrorEntity": {
             "type": "object",
             "properties": {

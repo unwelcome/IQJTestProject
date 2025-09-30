@@ -16,6 +16,11 @@ type RefreshToken struct {
 	Token string `json:"refresh_token" cookie:"refresh_token" redis:"refresh_token"`
 }
 
+type AuthResponse struct {
+	*TokenPair
+	UserID int `json:"id"`
+}
+
 type TokenPair struct {
 	AccessToken  string `json:"access_token" cookie:"access_token"`
 	RefreshToken string `json:"refresh_token" cookie:"refresh_token"`
