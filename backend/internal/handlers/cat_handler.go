@@ -117,19 +117,12 @@ func (h *CatHandler) UpdateCatName(c *fiber.Ctx) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	catID, err := c.ParamsInt("id")
-	if err != nil {
-		return c.Status(400).JSON(fiber.Map{"error": "Missing id"})
-	}
-
-	if catID < 1 {
-		return c.Status(400).JSON(fiber.Map{"error": "Invalid id"})
-	}
-
 	catUpdateNameRequest := &entities.CatUpdateNameRequest{}
 	if err := c.BodyParser(&catUpdateNameRequest); err != nil {
 		return c.Status(400).JSON(fiber.Map{"error": err.Error()})
 	}
+
+	catID := c.Locals("catID").(int)
 
 	catUpdateNameResponse, err := h.catService.UpdateCatName(ctx, catID, catUpdateNameRequest)
 	if err != nil {
@@ -155,19 +148,12 @@ func (h *CatHandler) UpdateCatAge(c *fiber.Ctx) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	catID, err := c.ParamsInt("id")
-	if err != nil {
-		return c.Status(400).JSON(fiber.Map{"error": "Missing id"})
-	}
-
-	if catID < 1 {
-		return c.Status(400).JSON(fiber.Map{"error": "Invalid id"})
-	}
-
 	catUpdateAgeRequest := &entities.CatUpdateAgeRequest{}
 	if err := c.BodyParser(&catUpdateAgeRequest); err != nil {
 		return c.Status(400).JSON(fiber.Map{"error": err.Error()})
 	}
+
+	catID := c.Locals("catID").(int)
 
 	catUpdateAgeResponse, err := h.catService.UpdateCatAge(ctx, catID, catUpdateAgeRequest)
 	if err != nil {
@@ -193,19 +179,12 @@ func (h *CatHandler) UpdateCatDescription(c *fiber.Ctx) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	catID, err := c.ParamsInt("id")
-	if err != nil {
-		return c.Status(400).JSON(fiber.Map{"error": "Missing id"})
-	}
-
-	if catID < 1 {
-		return c.Status(400).JSON(fiber.Map{"error": "Invalid id"})
-	}
-
 	catUpdateDescriptionRequest := &entities.CatUpdateDescriptionRequest{}
 	if err := c.BodyParser(&catUpdateDescriptionRequest); err != nil {
 		return c.Status(400).JSON(fiber.Map{"error": err.Error()})
 	}
+
+	catID := c.Locals("catID").(int)
 
 	catUpdateDescriptionResponse, err := h.catService.UpdateCatDescription(ctx, catID, catUpdateDescriptionRequest)
 	if err != nil {
@@ -231,19 +210,12 @@ func (h *CatHandler) UpdateCat(c *fiber.Ctx) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	catID, err := c.ParamsInt("id")
-	if err != nil {
-		return c.Status(400).JSON(fiber.Map{"error": "Missing id"})
-	}
-
-	if catID < 1 {
-		return c.Status(400).JSON(fiber.Map{"error": "Invalid id"})
-	}
-
 	catUpdateRequest := &entities.CatUpdateRequest{}
 	if err := c.BodyParser(&catUpdateRequest); err != nil {
 		return c.Status(400).JSON(fiber.Map{"error": err.Error()})
 	}
+
+	catID := c.Locals("catID").(int)
 
 	catUpdateResponse, err := h.catService.UpdateCat(ctx, catID, catUpdateRequest)
 	if err != nil {
@@ -268,16 +240,9 @@ func (h *CatHandler) DeleteCat(c *fiber.Ctx) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	catID, err := c.ParamsInt("id")
-	if err != nil {
-		return c.Status(400).JSON(fiber.Map{"error": "Missing id"})
-	}
+	catID := c.Locals("catID").(int)
 
-	if catID < 1 {
-		return c.Status(400).JSON(fiber.Map{"error": "Invalid id"})
-	}
-
-	err = h.catService.DeleteCat(ctx, catID)
+	err := h.catService.DeleteCat(ctx, catID)
 	if err != nil {
 		return c.Status(500).JSON(fiber.Map{"error": err.Error()})
 	}

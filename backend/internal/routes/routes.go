@@ -36,9 +36,13 @@ func SetupRoutes(app *fiber.App, container *dependency_injection.Container) {
 	api.Patch("/auth/user/password", container.UserHandler.UpdateUserPassword)
 
 	//Cat запросы
+	// Общие запросы
 	api.Get("/auth/cat/all", container.CatHandler.GetAllCats)
 	api.Get("/auth/cat/:id", container.CatHandler.GetCatByID)
 	api.Post("/auth/cat/create", container.CatHandler.CreateCat)
+	// Middleware проверки прав собственности
+	api.Use("/auth/cat/:id", container.CatOwnershipMiddleware)
+	// Запросы с middleware
 	api.Put("/auth/cat/:id", container.CatHandler.UpdateCat)
 	api.Patch("/auth/cat/:id/name", container.CatHandler.UpdateCatName)
 	api.Patch("/auth/cat/:id/age", container.CatHandler.UpdateCatAge)

@@ -90,3 +90,12 @@ func (s *CatService) DeleteCat(ctx context.Context, catID int) error {
 	}
 	return nil
 }
+
+func (s *CatService) CheckOwnershipRight(ctx context.Context, userID, catID int) (bool, error) {
+	cat, err := s.catRepository.GetCatByID(ctx, catID)
+	if err != nil {
+		return false, fmt.Errorf("get cat info error: %s", err.Error())
+	}
+
+	return cat.CreatedBy == userID, nil
+}

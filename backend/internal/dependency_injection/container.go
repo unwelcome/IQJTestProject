@@ -15,8 +15,9 @@ import (
 
 type Container struct {
 	// Middleware
-	LoggingMiddleware func(c *fiber.Ctx) error
-	AuthMiddleware    func(c *fiber.Ctx) error
+	LoggingMiddleware      func(c *fiber.Ctx) error
+	AuthMiddleware         func(c *fiber.Ctx) error
+	CatOwnershipMiddleware func(c *fiber.Ctx) error
 
 	// Health
 	HealthHandler *handlers.HealthHandler
@@ -59,6 +60,7 @@ func NewContainer(postgres *sql.DB, redis *redis.Client, cfg *config.Config, log
 func (c *Container) InitMiddlewares(logger zerolog.Logger) {
 	c.LoggingMiddleware = middlewares.LoggingRequest(logger)
 	c.AuthMiddleware = middlewares.AuthMiddleware(c.authService)
+	c.CatOwnershipMiddleware = middlewares.CatOwnershipMiddleware(c.catService)
 }
 
 func (c *Container) InitRepositories(postgres *sql.DB, redis *redis.Client) {
