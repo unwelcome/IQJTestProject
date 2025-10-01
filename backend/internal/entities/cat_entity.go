@@ -11,7 +11,7 @@ type Cat struct {
 
 type CatWithPhotos struct {
 	*Cat
-	Photos []*CatPhotoShort `json:"photos"`
+	Photos []*CatPhotoUrl `json:"photos"`
 }
 
 type CatCreateRequest struct {

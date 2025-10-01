@@ -10,7 +10,7 @@ type CatPhoto struct {
 	CreatedAt string `db:"created_at"`
 }
 
-type CatPhotoShort struct {
+type CatPhotoUrl struct {
 	ID        int    `json:"id" db:"id"`
 	Url       string `json:"url" db:"url"`
 	IsPrimary bool   `json:"is_primary" db:"is_primary"`

@@ -6,12 +6,12 @@ import (
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	_ "github.com/unwelcome/iqjtest/api/docs"
+	"github.com/unwelcome/iqjtest/database/minio"
 	"github.com/unwelcome/iqjtest/database/postgresql"
 	"github.com/unwelcome/iqjtest/database/redis"
 	"github.com/unwelcome/iqjtest/internal/config"
 	"github.com/unwelcome/iqjtest/internal/dependency_injection"
 	"github.com/unwelcome/iqjtest/internal/routes"
-	"time"
 )
 
 // @title           IQJ Test Task
@@ -33,23 +33,21 @@ func main() {
 	cfg := config.LoadConfig(logger)
 
 	// Подключение к postgresql
-	postgres := postgresql.Connect(cfg, logger)
-	defer postgres.Close()
-
-	//TODO
-	//[] избавиться от обертки у postgres
+	Postgres := postgresql.Connect(cfg, logger)
+	defer Postgres.Close()
 
 	// Подключение к redis
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-	redis := redis.Connect(ctx, cfg, logger)
-	defer redis.Close()
+	Redis := redis.Connect(context.Background(), cfg, logger)
+	defer Redis.Close()
+
+	// Подключение к MinIO
+	Minio := minio.InitMinio(cfg.S3ConnConfig(), logger, cfg.GetS3Buckets())
 
 	// Инициализация fiber
 	app := fiber.New()
 
 	// Создание контейнера с dependency injection
-	container := dependency_injection.NewContainer(postgres.DB, redis, cfg, logger)
+	container := dependency_injection.NewContainer(Postgres, Redis, Minio, cfg, logger)
 
 	// Инициализация роутов
 	routes.SetupRoutes(app, container)

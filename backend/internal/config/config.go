@@ -4,7 +4,9 @@ import (
 	"fmt"
 	"github.com/joho/godotenv"
 	"github.com/rs/zerolog"
+	"github.com/unwelcome/iqjtest/database/minio"
 	"os"
+	"strconv"
 	"time"
 )
 
@@ -25,7 +27,8 @@ type Config struct {
 	S3Port     string
 	S3User     string
 	S3Password string
-	S3Bucket   string
+	S3UseSSL   bool
+	S3Buckets  map[string]string
 
 	JWTSecret            string
 	AccessTokenLifetime  time.Duration
@@ -58,7 +61,10 @@ func LoadConfig(l zerolog.Logger) *Config {
 	cfg.S3Port = getEnv("MINIO_PORT", "9000")
 	cfg.S3User = getEnv("MINIO_USER", "minio")
 	cfg.S3Password = getEnv("MINIO_PASSWORD", "minio")
-	cfg.S3Bucket = getEnv("MINIO_BUCKET", "bucket")
+	cfg.S3UseSSL = getEnvBool("MINIO_SSL", false)
+	cfg.S3Buckets = map[string]string{
+		"catPhotoBucket": "cat-photo-bucket",
+	}
 
 	// Для запуска через Docker
 	if getEnv("IS_DOCKER", "") == "true" {
@@ -90,9 +96,48 @@ func (c *Config) CacheConnString() string {
 	return fmt.Sprintf("redis://%s:%s@%s:%s/%s", c.CacheUser, c.CachePassword, c.CacheHost, c.CachePort, c.CacheDBName)
 }
 
+func (c *Config) S3ConnConfig() *minio.ConnectConfig {
+	return &minio.ConnectConfig{
+		Endpoint: fmt.Sprintf("%s:%s", c.S3Host, c.S3Port),
+		Username: c.S3User,
+		Password: c.S3Password,
+		UseSSL:   c.S3UseSSL,
+	}
+}
+
+func (c *Config) GetS3Buckets() []string {
+	var buckets []string
+	for _, bucketName := range c.S3Buckets {
+		buckets = append(buckets, bucketName)
+	}
+	return buckets
+}
+
 func getEnv(key, defaultValue string) string {
 	if value := os.Getenv(key); value != "" {
 		return value
+	}
+	return defaultValue
+}
+
+func getEnvInt(key string, defaultValue int) int {
+	if value := os.Getenv(key); value != "" {
+		result, err := strconv.Atoi(value)
+		if err != nil {
+			return defaultValue
+		}
+		return result
+	}
+	return defaultValue
+}
+
+func getEnvBool(key string, defaultValue bool) bool {
+	if value := os.Getenv(key); value != "" {
+		result, err := strconv.ParseBool(value)
+		if err != nil {
+			return defaultValue
+		}
+		return result
 	}
 	return defaultValue
 }

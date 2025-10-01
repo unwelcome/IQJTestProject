@@ -2,6 +2,7 @@ package dependency_injection
 
 import (
 	"database/sql"
+	"github.com/minio/minio-go/v7"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/redis/go-redis/v9"
@@ -38,7 +39,7 @@ type Container struct {
 	CatHandler    *handlers.CatHandler
 }
 
-func NewContainer(postgres *sql.DB, redis *redis.Client, cfg *config.Config, logger zerolog.Logger) *Container {
+func NewContainer(postgres *sql.DB, redis *redis.Client, minio *minio.Client, cfg *config.Config, logger zerolog.Logger) *Container {
 	// Создание контейнера
 	container := &Container{}
 

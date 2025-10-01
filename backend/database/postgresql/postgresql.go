@@ -8,11 +8,7 @@ import (
 	"github.com/unwelcome/iqjtest/internal/config"
 )
 
-type Database struct {
-	DB *sql.DB
-}
-
-func Connect(cfg *config.Config, l zerolog.Logger) *Database {
+func Connect(cfg *config.Config, l zerolog.Logger) *sql.DB {
 	postgres, err := ConnectToPostgres(cfg)
 	if err != nil {
 		l.Fatal().Err(err).Msg("Database connection failed")
@@ -22,7 +18,7 @@ func Connect(cfg *config.Config, l zerolog.Logger) *Database {
 	return postgres
 }
 
-func ConnectToPostgres(cfg *config.Config) (*Database, error) {
+func ConnectToPostgres(cfg *config.Config) (*sql.DB, error) {
 	connStr := cfg.DBConnString()
 
 	db, err := sql.Open("postgres", connStr)
@@ -34,9 +30,5 @@ func ConnectToPostgres(cfg *config.Config) (*Database, error) {
 		return nil, fmt.Errorf("failed to ping database: %w", err)
 	}
 
-	return &Database{DB: db}, nil
-}
-
-func (d *Database) Close() error {
-	return d.DB.Close()
+	return db, nil
 }
