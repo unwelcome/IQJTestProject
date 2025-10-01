@@ -12,8 +12,8 @@ CREATE TABLE "cats" (
     "name" varchar(255) NOT NULL,
     "age" integer,
     "description" text,
-    "created_at" timestamp,
-    "created_by" integer
+    "created_by" integer,
+    "created_at" timestamp NOT NULL DEFAULT NOW()
 );
 
 CREATE TABLE "cat_photos" (

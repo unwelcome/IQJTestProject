@@ -2,6 +2,7 @@ package dependency_injection
 
 import (
 	"database/sql"
+
 	"github.com/gofiber/fiber/v2"
 	"github.com/redis/go-redis/v9"
 	"github.com/rs/zerolog"
@@ -29,6 +30,11 @@ type Container struct {
 	userRepository *repositories.UserRepository
 	userService    *services.UserService
 	UserHandler    *handlers.UserHandler
+
+	//Cat
+	catRepository *repositories.CatRepository
+	catService    *services.CatService
+	CatHandler    *handlers.CatHandler
 }
 
 func NewContainer(postgres *sql.DB, redis *redis.Client, cfg *config.Config, logger zerolog.Logger) *Container {
@@ -58,15 +64,18 @@ func (c *Container) InitMiddlewares(logger zerolog.Logger) {
 func (c *Container) InitRepositories(postgres *sql.DB, redis *redis.Client) {
 	c.userRepository = repositories.NewUserRepository(postgres)
 	c.authRepository = repositories.NewAuthRepository(redis)
+	c.catRepository = repositories.NewCatRepository(postgres)
 }
 
 func (c *Container) InitServices(cfg *config.Config) {
 	c.userService = services.NewUserService(c.userRepository)
 	c.authService = services.NewAuthService(c.userService, c.authRepository, cfg.JWTSecret, cfg.AccessTokenLifetime, cfg.RefreshTokenLifetime)
+	c.catService = services.NewCatService(c.catRepository)
 }
 
 func (c *Container) InitHandlers() {
 	c.HealthHandler = handlers.NewHealthHandler()
 	c.UserHandler = handlers.NewUserHandler(c.userService)
 	c.AuthHandler = handlers.NewAuthHandler(c.authService)
+	c.CatHandler = handlers.NewCatHandler(c.catService)
 }

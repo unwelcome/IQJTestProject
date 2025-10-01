@@ -9,3 +9,9 @@ type CatPhoto struct {
 	IsPrimary bool   `json:"is_primary" db:"is_primary"`
 	CreatedAt string `db:"created_at"`
 }
+
+type CatPhotoShort struct {
+	ID        int    `json:"id" db:"id"`
+	Url       string `json:"url" db:"url"`
+	IsPrimary bool   `json:"is_primary" db:"is_primary"`
+}

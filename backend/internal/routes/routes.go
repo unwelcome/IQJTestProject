@@ -34,4 +34,14 @@ func SetupRoutes(app *fiber.App, container *dependency_injection.Container) {
 	api.Get("/auth/user/all", container.UserHandler.GetAllUsers)
 	api.Get("/auth/user/:id", container.UserHandler.GetUserByID)
 	api.Patch("/auth/user/password", container.UserHandler.UpdateUserPassword)
+
+	//Cat запросы
+	api.Get("/auth/cat/all", container.CatHandler.GetAllCats)
+	api.Get("/auth/cat/:id", container.CatHandler.GetCatByID)
+	api.Post("/auth/cat/create", container.CatHandler.CreateCat)
+	api.Put("/auth/cat/:id", container.CatHandler.UpdateCat)
+	api.Patch("/auth/cat/:id/name", container.CatHandler.UpdateCatName)
+	api.Patch("/auth/cat/:id/age", container.CatHandler.UpdateCatAge)
+	api.Patch("/auth/cat/:id/description", container.CatHandler.UpdateCatDescription)
+	api.Delete("/auth/cat/:id", container.CatHandler.DeleteCat)
 }

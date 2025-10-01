@@ -9,6 +9,85 @@ definitions:
       refresh_token:
         type: string
     type: object
+  entities.Cat:
+    properties:
+      age:
+        type: integer
+      created_at:
+        type: string
+      created_by:
+        type: integer
+      description:
+        type: string
+      id:
+        type: integer
+      name:
+        type: string
+    type: object
+  entities.CatCreateRequest:
+    properties:
+      age:
+        type: integer
+      description:
+        type: string
+      name:
+        type: string
+    type: object
+  entities.CatCreateResponse:
+    properties:
+      id:
+        type: integer
+    type: object
+  entities.CatUpdateAgeRequest:
+    properties:
+      age:
+        type: integer
+    type: object
+  entities.CatUpdateAgeResponse:
+    properties:
+      id:
+        type: integer
+    type: object
+  entities.CatUpdateDescriptionRequest:
+    properties:
+      description:
+        type: string
+    type: object
+  entities.CatUpdateDescriptionResponse:
+    properties:
+      id:
+        type: integer
+    type: object
+  entities.CatUpdateNameRequest:
+    properties:
+      name:
+        type: string
+    type: object
+  entities.CatUpdateNameResponse:
+    properties:
+      id:
+        type: integer
+    type: object
+  entities.CatUpdateRequest:
+    properties:
+      age:
+        type: integer
+      description:
+        type: string
+      name:
+        type: string
+    type: object
+  entities.CatUpdateResponse:
+    properties:
+      age:
+        type: integer
+      description:
+        type: string
+      id:
+        type: integer
+      name:
+        type: string
+    type: object
   entities.ErrorEntity:
     properties:
       error:
@@ -71,6 +150,269 @@ info:
   title: IQJ Test Task
   version: "1.0"
 paths:
+  /auth/cat/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Удаление кота
+      parameters:
+      - description: Cat ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/entities.ErrorEntity'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/entities.ErrorEntity'
+      security:
+      - ApiKeyAuth: []
+      summary: Удаление кота
+      tags:
+      - cat
+    get:
+      consumes:
+      - application/json
+      description: Получение кота по ID
+      parameters:
+      - description: Cat ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/entities.Cat'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/entities.ErrorEntity'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/entities.ErrorEntity'
+      security:
+      - ApiKeyAuth: []
+      summary: Получение кота по ID
+      tags:
+      - cat
+    put:
+      consumes:
+      - application/json
+      description: Обновление клички, возраста и описания кота
+      parameters:
+      - description: Cat ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Данные кота
+        in: body
+        name: cat
+        required: true
+        schema:
+          $ref: '#/definitions/entities.CatUpdateRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entities.CatUpdateResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/entities.ErrorEntity'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/entities.ErrorEntity'
+      security:
+      - ApiKeyAuth: []
+      summary: Обновление клички, возраста и описания кота
+      tags:
+      - cat
+  /auth/cat/{id}/age:
+    patch:
+      consumes:
+      - application/json
+      description: Обновление возраста кота
+      parameters:
+      - description: Cat ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Данные кота
+        in: body
+        name: cat
+        required: true
+        schema:
+          $ref: '#/definitions/entities.CatUpdateAgeRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entities.CatUpdateAgeResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/entities.ErrorEntity'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/entities.ErrorEntity'
+      security:
+      - ApiKeyAuth: []
+      summary: Обновление возраста кота
+      tags:
+      - cat
+  /auth/cat/{id}/description:
+    patch:
+      consumes:
+      - application/json
+      description: Обновление описания кота
+      parameters:
+      - description: Cat ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Данные кота
+        in: body
+        name: cat
+        required: true
+        schema:
+          $ref: '#/definitions/entities.CatUpdateDescriptionRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entities.CatUpdateDescriptionResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/entities.ErrorEntity'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/entities.ErrorEntity'
+      security:
+      - ApiKeyAuth: []
+      summary: Обновление описания кота
+      tags:
+      - cat
+  /auth/cat/{id}/name:
+    patch:
+      consumes:
+      - application/json
+      description: Обновление клички кота
+      parameters:
+      - description: Cat ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Данные кота
+        in: body
+        name: cat
+        required: true
+        schema:
+          $ref: '#/definitions/entities.CatUpdateNameRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entities.CatUpdateNameResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/entities.ErrorEntity'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/entities.ErrorEntity'
+      security:
+      - ApiKeyAuth: []
+      summary: Обновление клички кота
+      tags:
+      - cat
+  /auth/cat/all:
+    get:
+      consumes:
+      - application/json
+      description: Получение всех котов
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/entities.Cat'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/entities.ErrorEntity'
+      security:
+      - ApiKeyAuth: []
+      summary: Получение всех котов
+      tags:
+      - cat
+  /auth/cat/create:
+    post:
+      consumes:
+      - application/json
+      description: Создает нового кота
+      parameters:
+      - description: Данные кота
+        in: body
+        name: cat
+        required: true
+        schema:
+          $ref: '#/definitions/entities.CatCreateRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/entities.CatCreateResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/entities.ErrorEntity'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/entities.ErrorEntity'
+      security:
+      - ApiKeyAuth: []
+      summary: Создание кота
+      tags:
+      - cat
   /auth/logout:
     delete:
       consumes:
