@@ -22,6 +22,11 @@ func (s *CatPhotoService) AddCatPhoto(ctx context.Context, catID int, req *entit
 		return nil, fmt.Errorf("add cat photo error: %w", err)
 	}
 
+	// Если новое фото имеет is_primary=true, то устанавливаем его в true через сервис
+	if req.IsPrimary {
+		_ = s.SetCatPhotoPrimary(ctx, catID, res.ID)
+	}
+
 	return res, nil
 }
 

@@ -51,8 +51,8 @@ func (r *CatPhotoRepository) AddCatPhoto(ctx context.Context, catID int, req *en
 	res.Url = fmt.Sprintf("http://%s/%s/%s", r.endpoint, r.bucketName, filename)
 
 	// Сохраняем фото в бд
-	query := `INSERT INTO cat_photos (cat_id, filename, filesize, mime_type, is_primary) VALUES ($1, $2, $3, $4, $5) RETURNING id;`
-	err = r.db.QueryRowContext(ctx, query, catID, filename, req.FileSize, req.MimeType, req.IsPrimary).Scan(&res.ID)
+	query := `INSERT INTO cat_photos (cat_id, url, filename, filesize, mime_type, is_primary) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id;`
+	err = r.db.QueryRowContext(ctx, query, catID, res.Url, filename, req.FileSize, req.MimeType, req.IsPrimary).Scan(&res.ID)
 	if err != nil {
 		return nil, err
 	}

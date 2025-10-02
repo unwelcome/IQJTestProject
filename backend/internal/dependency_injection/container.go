@@ -23,7 +23,7 @@ type Container struct {
 	// Health
 	HealthHandler *handlers.HealthHandler
 
-	//Auth
+	// Auth
 	authRepository *repositories.AuthRepository
 	authService    *services.AuthService
 	AuthHandler    *handlers.AuthHandler
@@ -33,10 +33,15 @@ type Container struct {
 	userService    *services.UserService
 	UserHandler    *handlers.UserHandler
 
-	//Cat
+	// Cat
 	catRepository *repositories.CatRepository
 	catService    *services.CatService
 	CatHandler    *handlers.CatHandler
+
+	// CatPhoto
+	catPhotoRepository *repositories.CatPhotoRepository
+	catPhotoService    *services.CatPhotoService
+	CatPhotoHandler    *handlers.CatPhotoHandler
 }
 
 func NewContainer(postgres *sql.DB, redis *redis.Client, minio *minio.Client, cfg *config.Config, logger zerolog.Logger) *Container {
@@ -44,7 +49,7 @@ func NewContainer(postgres *sql.DB, redis *redis.Client, minio *minio.Client, cf
 	container := &Container{}
 
 	// Инициализация репозиториев
-	container.InitRepositories(postgres, redis)
+	container.InitRepositories(postgres, redis, minio, cfg)
 
 	// Инициализация сервисов
 	container.InitServices(cfg)
@@ -64,16 +69,18 @@ func (c *Container) InitMiddlewares(logger zerolog.Logger) {
 	c.CatOwnershipMiddleware = middlewares.CatOwnershipMiddleware(c.catService)
 }
 
-func (c *Container) InitRepositories(postgres *sql.DB, redis *redis.Client) {
+func (c *Container) InitRepositories(postgres *sql.DB, redis *redis.Client, minio *minio.Client, cfg *config.Config) {
 	c.userRepository = repositories.NewUserRepository(postgres)
 	c.authRepository = repositories.NewAuthRepository(redis)
 	c.catRepository = repositories.NewCatRepository(postgres)
+	c.catPhotoRepository = repositories.NewCatPhotoRepository(postgres, minio, cfg.S3ConnConfig().PublicEndpoint, cfg.S3Buckets["catPhotoBucket"].Name)
 }
 
 func (c *Container) InitServices(cfg *config.Config) {
 	c.userService = services.NewUserService(c.userRepository)
 	c.authService = services.NewAuthService(c.userService, c.authRepository, cfg.JWTSecret, cfg.AccessTokenLifetime, cfg.RefreshTokenLifetime)
 	c.catService = services.NewCatService(c.catRepository)
+	c.catPhotoService = services.NewCatPhotoService(c.catPhotoRepository)
 }
 
 func (c *Container) InitHandlers() {
@@ -81,4 +88,5 @@ func (c *Container) InitHandlers() {
 	c.UserHandler = handlers.NewUserHandler(c.userService)
 	c.AuthHandler = handlers.NewAuthHandler(c.authService)
 	c.CatHandler = handlers.NewCatHandler(c.catService)
+	c.CatPhotoHandler = handlers.NewCatPhotoHandler(c.catPhotoService)
 }

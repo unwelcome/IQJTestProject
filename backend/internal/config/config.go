@@ -11,6 +11,9 @@ import (
 )
 
 type Config struct {
+	AppHost string
+	AppPort string
+
 	DBHost     string
 	DBPort     string
 	DBUser     string
@@ -28,7 +31,7 @@ type Config struct {
 	S3User     string
 	S3Password string
 	S3UseSSL   bool
-	S3Buckets  map[string]string
+	S3Buckets  map[string]*minio.Bucket
 
 	JWTSecret            string
 	AccessTokenLifetime  time.Duration
@@ -41,6 +44,10 @@ func LoadConfig(l zerolog.Logger) *Config {
 
 	// Создаем экземпляр конфига
 	cfg := &Config{}
+
+	// Инициализируем данные из env файла для App
+	cfg.AppHost = "localhost"
+	cfg.AppPort = getEnv("BACKEND_PORT", "8080")
 
 	// Инициализируем данные из env файла для основной DB
 	cfg.DBHost = "localhost"
@@ -62,12 +69,10 @@ func LoadConfig(l zerolog.Logger) *Config {
 	cfg.S3User = getEnv("MINIO_USER", "minio")
 	cfg.S3Password = getEnv("MINIO_PASSWORD", "minio")
 	cfg.S3UseSSL = getEnvBool("MINIO_SSL", false)
-	cfg.S3Buckets = map[string]string{
-		"catPhotoBucket": "cat-photo-bucket",
-	}
 
 	// Для запуска через Docker
 	if getEnv("IS_DOCKER", "") == "true" {
+		cfg.AppHost = getEnv("BACKEND_HOST", "localhost")
 		cfg.DBHost = getEnv("POSTGRES_HOST", "postgres")
 		cfg.CacheHost = getEnv("REDIS_HOST", "redis")
 		cfg.S3Host = getEnv("MINIO_HOST", "minio")
@@ -75,8 +80,13 @@ func LoadConfig(l zerolog.Logger) *Config {
 
 	// Инициализируем jwt секрет
 	cfg.JWTSecret = getEnv("JWT_SECRET", "ultra-secret-key")
-	cfg.AccessTokenLifetime = 5 * time.Minute
+	cfg.AccessTokenLifetime = 55 * time.Minute
 	cfg.RefreshTokenLifetime = 30 * 24 * time.Hour
+
+	// Декларируем S3 бакеты
+	cfg.S3Buckets = map[string]*minio.Bucket{
+		"catPhotoBucket": &minio.Bucket{Name: "cat-photo-bucket", IsOpen: true},
+	}
 
 	l.Trace().Str("DBHost", cfg.DBHost).Str("DBPort", cfg.DBPort).Msg("Postgres config")
 	l.Trace().Str("CacheHost", cfg.CacheHost).Str("CachePort", cfg.CachePort).Msg("Redis config")
@@ -84,6 +94,10 @@ func LoadConfig(l zerolog.Logger) *Config {
 
 	// Возвращаем экземпляр конфига
 	return cfg
+}
+
+func (c *Config) GetAppAddress() string {
+	return fmt.Sprintf("%s:%s", c.AppHost, c.AppPort)
 }
 
 func (c *Config) DBConnString() string {
@@ -98,17 +112,18 @@ func (c *Config) CacheConnString() string {
 
 func (c *Config) S3ConnConfig() *minio.ConnectConfig {
 	return &minio.ConnectConfig{
-		Endpoint: fmt.Sprintf("%s:%s", c.S3Host, c.S3Port),
-		Username: c.S3User,
-		Password: c.S3Password,
-		UseSSL:   c.S3UseSSL,
+		BackendEndpoint: fmt.Sprintf("%s:%s", c.S3Host, c.S3Port),
+		PublicEndpoint:  fmt.Sprintf("%s:%s", c.S3Host, c.S3Port),
+		Username:        c.S3User,
+		Password:        c.S3Password,
+		UseSSL:          c.S3UseSSL,
 	}
 }
 
-func (c *Config) GetS3Buckets() []string {
-	var buckets []string
-	for _, bucketName := range c.S3Buckets {
-		buckets = append(buckets, bucketName)
+func (c *Config) GetS3Buckets() []*minio.Bucket {
+	var buckets []*minio.Bucket
+	for _, bucket := range c.S3Buckets {
+		buckets = append(buckets, bucket)
 	}
 	return buckets
 }

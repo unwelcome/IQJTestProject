@@ -23,6 +23,15 @@ definitions:
       id:
         type: integer
     type: object
+  entities.CatPhotoUploadResponse:
+    properties:
+      file_name:
+        type: string
+      id:
+        type: integer
+      url:
+        type: string
+    type: object
   entities.CatPhotoUrl:
     properties:
       id:
@@ -382,6 +391,46 @@ paths:
       security:
       - ApiKeyAuth: []
       summary: Обновление клички кота
+      tags:
+      - cat
+  /auth/cat/{id}/photo:
+    post:
+      consumes:
+      - multipart/form-data
+      description: Загружает фотографию для указанного кота
+      parameters:
+      - description: Cat ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Файл изображения
+        in: formData
+        name: file
+        required: true
+        type: file
+      - description: Сделать главным фото
+        in: formData
+        name: is_primary
+        type: boolean
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/entities.CatPhotoUploadResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/entities.ErrorEntity'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/entities.ErrorEntity'
+      security:
+      - ApiKeyAuth: []
+      summary: Загрузить фото кота
       tags:
       - cat
   /auth/cat/all:
