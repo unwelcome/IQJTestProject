@@ -18,11 +18,12 @@ CREATE TABLE "cats" (
 
 CREATE TABLE "cat_photos" (
     "id" SERIAL PRIMARY KEY,
-    "cat_id" integer,
-    "filename" text NOT NULL,
+    "cat_id" integer NOT NULL,
+    "url" text NOT NULL,
+    "filename" text UNIQUE,
     "filesize" integer,
     "mime_type" varchar(255),
-    "created_at" timestamp,
+    "created_at" timestamp NOT NULL DEFAULT NOW(),
     "is_primary" bool DEFAULT false
 );
 
