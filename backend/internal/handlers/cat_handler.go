@@ -55,7 +55,7 @@ func (h *CatHandler) CreateCat(c *fiber.Ctx) error {
 // @Produce json
 // @Security ApiKeyAuth
 // @Param id path int true "Cat ID"
-// @Success 201 {object} entities.Cat
+// @Success 201 {object} entities.CatWithPhotos
 // @Failure 400 {object} entities.ErrorEntity
 // @Failure 500 {object} entities.ErrorEntity
 // @Router /auth/cat/{id} [get]
@@ -86,7 +86,7 @@ func (h *CatHandler) GetCatByID(c *fiber.Ctx) error {
 // @Accept json
 // @Produce json
 // @Security ApiKeyAuth
-// @Success 200 {object} []entities.Cat
+// @Success 200 {object} []entities.CatWithPrimePhoto
 // @Failure 500 {object} entities.ErrorEntity
 // @Router /auth/cat/all [get]
 func (h *CatHandler) GetAllCats(c *fiber.Ctx) error {

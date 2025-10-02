@@ -30,7 +30,7 @@ func (s *CatService) CreateCat(ctx context.Context, userID int, catCreateRequest
 	return &entities.CatCreateResponse{ID: cat.ID}, nil
 }
 
-func (s *CatService) GetCatByID(ctx context.Context, catID int) (*entities.Cat, error) {
+func (s *CatService) GetCatByID(ctx context.Context, catID int) (*entities.CatWithPhotos, error) {
 	cat, err := s.catRepository.GetCatByID(ctx, catID)
 	if err != nil {
 		return nil, fmt.Errorf("get cat by id error: %s", err.Error())
@@ -38,7 +38,7 @@ func (s *CatService) GetCatByID(ctx context.Context, catID int) (*entities.Cat, 
 	return cat, nil
 }
 
-func (s *CatService) GetAllCats(ctx context.Context) ([]*entities.Cat, error) {
+func (s *CatService) GetAllCats(ctx context.Context) ([]*entities.CatWithPrimePhoto, error) {
 	cats, err := s.catRepository.GetAllCats(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("get all cats error: %s", err.Error())

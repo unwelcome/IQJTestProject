@@ -3,6 +3,7 @@ package repositories
 import (
 	"context"
 	"database/sql"
+	"fmt"
 
 	"github.com/unwelcome/iqjtest/internal/entities"
 )
@@ -25,32 +26,128 @@ func (r *CatRepository) CreateCat(ctx context.Context, userID int, cat *entities
 	return nil
 }
 
-func (r *CatRepository) GetCatByID(ctx context.Context, catID int) (*entities.Cat, error) {
-	query := `SELECT name, age, description, created_at, created_by FROM cats WHERE id = $1;`
+func (r *CatRepository) GetCatByID(ctx context.Context, catID int) (*entities.CatWithPhotos, error) {
+	// Запрос на получение кота с left join его фото с сортировкой по is_primary и cp.id
+	query := `
+		SELECT 
+			c.name,
+			c.age,
+			c.description,	
+			c.created_at, 
+			c.created_by,
+			cp.id, 
+			cp.url, 
+			cp.is_primary
+		FROM cats c
+		LEFT JOIN cat_photos cp ON c.id = cp.cat_id
+		WHERE c.id = $1
+		ORDER BY cp.is_primary DESC, cp.id ASC;
+	`
 
-	cat := &entities.Cat{ID: catID}
-	err := r.db.QueryRowContext(ctx, query, catID).Scan(&cat.Name, &cat.Age, &cat.Description, &cat.CreatedAt, &cat.CreatedBy)
+	// Выполняем запрос
+	rows, err := r.db.QueryContext(ctx, query, catID)
 	if err != nil {
 		return nil, err
 	}
+
+	// cat.ID = catID - 1 флаг, что структура cat пуста
+	cat := &entities.CatWithPhotos{ID: catID - 1}
+	var catPhotos []*entities.CatPhotoUrl
+
+	// Переменные для скана
+	var (
+		catAge, catCreatedBy                  int
+		catName, catDescription, catCreatedAt string
+		photoID                               sql.NullInt64
+		photoUrl                              sql.NullString
+		photoIsPrimary                        sql.NullBool
+	)
+
+	// Мэппинг ответа в структуру
+	for rows.Next() {
+		err := rows.Scan(
+			&catName, &catAge, &catDescription, &catCreatedAt, &catCreatedBy,
+			&photoID, &photoUrl, &photoIsPrimary,
+		)
+		if err != nil {
+			return nil, err
+		}
+
+		// Если cat пустой заносим значения в поля кота
+		if cat.ID != catID {
+			cat.ID = catID
+			cat.Name = catName
+			cat.Age = catAge
+			cat.Description = catDescription
+			cat.CreatedAt = catCreatedAt
+			cat.CreatedBy = catCreatedBy
+		}
+
+		// Если все поля не null то создаем объект фото
+		if photoID.Valid && photoUrl.Valid && photoIsPrimary.Valid {
+			catPhotos = append(catPhotos, &entities.CatPhotoUrl{
+				ID:        int(photoID.Int64),
+				Url:       photoUrl.String,
+				IsPrimary: photoIsPrimary.Bool,
+			})
+		}
+	}
+
+	// Цикл не выполнился ни разу, значит кота нет
+	if cat.ID == (catID - 1) {
+		return nil, fmt.Errorf("cat not found")
+	}
+
+	cat.Photos = catPhotos
 	return cat, nil
 }
 
-func (r *CatRepository) GetAllCats(ctx context.Context) ([]*entities.Cat, error) {
-	query := `SELECT id, name, age, description, created_at, created_by FROM cats;`
+func (r *CatRepository) GetAllCats(ctx context.Context) ([]*entities.CatWithPrimePhoto, error) {
+	// Запрос на получение всех котов с left join фото котов, сортируя по catID, затем по is_primary и в конце по photoID
+	// Т.о. Получаем кота с первым is_primary фото либо кота с первым фото либо кота без фото
+	query := `
+		SELECT DISTINCT ON (c.id)
+			c.id,
+			c.name,
+			c.age,
+			cp.id AS photo_id, 
+			cp.url
+		FROM cats c
+		LEFT JOIN cat_photos cp ON c.id = cp.cat_id
+		ORDER BY c.id, cp.is_primary DESC NULLS LAST, cp.id ASC;
+	`
 
+	// Выполняем запрос
 	rows, err := r.db.QueryContext(ctx, query)
 	if err != nil {
 		return nil, err
 	}
+	defer rows.Close()
 
-	var cats []*entities.Cat
+	var (
+		cats    []*entities.CatWithPrimePhoto
+		photoID sql.NullInt64
+		url     sql.NullString
+	)
+
+	// Мэппинг ответа в структуру
 	for rows.Next() {
-		cat := &entities.Cat{}
+		cat := &entities.CatWithPrimePhoto{}
 
-		err = rows.Scan(&cat.ID, &cat.Name, &cat.Age, &cat.Description, &cat.CreatedAt, &cat.CreatedBy)
+		err = rows.Scan(&cat.ID, &cat.Name, &cat.Age, &photoID, &url)
 		if err != nil {
 			return nil, err
+		}
+
+		// Если photoID не null
+		if photoID.Valid {
+			id := int(photoID.Int64)
+			cat.PhotoID = &id
+		}
+		// Если url не null
+		if url.Valid {
+			urlStr := url.String
+			cat.Url = &urlStr
 		}
 
 		cats = append(cats, cat)
