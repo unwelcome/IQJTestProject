@@ -23,6 +23,11 @@ definitions:
       id:
         type: integer
     type: object
+  entities.CatPhotoSetPrimaryResponse:
+    properties:
+      id:
+        type: integer
+    type: object
   entities.CatPhotoUploadResponse:
     properties:
       file_name:
@@ -393,7 +398,79 @@ paths:
       summary: Обновление клички кота
       tags:
       - cat
-  /auth/cat/{id}/photo:
+  /auth/cat/{id}/photo/{photoID}:
+    delete:
+      consumes:
+      - application/json
+      description: Удаление фото кота по ID
+      parameters:
+      - description: Cat ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Photo ID
+        in: path
+        name: photoID
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/entities.ErrorEntity'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/entities.ErrorEntity'
+      security:
+      - ApiKeyAuth: []
+      summary: Удаление фото кота по ID
+      tags:
+      - cat
+  /auth/cat/{id}/photo/{photoID}/primary:
+    post:
+      consumes:
+      - application/json
+      description: Выбор основного фото кота
+      parameters:
+      - description: Cat ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Photo ID
+        in: path
+        name: photoID
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entities.CatPhotoSetPrimaryResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/entities.ErrorEntity'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/entities.ErrorEntity'
+      security:
+      - ApiKeyAuth: []
+      summary: Выбор основного фото кота
+      tags:
+      - cat
+  /auth/cat/{id}/photo/add:
     post:
       consumes:
       - multipart/form-data

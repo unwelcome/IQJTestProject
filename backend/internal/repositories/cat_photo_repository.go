@@ -85,6 +85,16 @@ func (r *CatPhotoRepository) SetCatPhotoPrimary(ctx context.Context, catID, phot
 	}
 	defer tx.Rollback()
 
+	// Проверяем, что фото принадлежит коту
+	var exists bool
+	err = tx.QueryRowContext(ctx, `SELECT EXISTS(SELECT 1 FROM cat_photos WHERE id = $1 AND cat_id = $2)`, photoID, catID).Scan(&exists)
+	if err != nil {
+		return fmt.Errorf("check photo ownership error: %w", err)
+	}
+	if !exists {
+		return fmt.Errorf("photo %d does not belong to cat %d", photoID, catID)
+	}
+
 	// Убираем у всех фото конкретного кота is_primary
 	_, err = tx.ExecContext(ctx, `UPDATE cat_photos SET is_primary = false WHERE cat_id = $1;`, catID)
 	if err != nil {
@@ -128,10 +138,10 @@ func (r *CatPhotoRepository) GetAllCatPhotos(ctx context.Context, catID int) ([]
 }
 
 func (r *CatPhotoRepository) GetCatPhotoByID(ctx context.Context, photoID int) (*entities.CatPhoto, error) {
-	query := `SELECT id, url, filename, filesize, mime_type, is_primary, created_at FROM cat_photos WHERE id = $1;`
+	query := `SELECT url, cat_id, filename, filesize, mime_type, is_primary, created_at FROM cat_photos WHERE id = $1;`
 
 	catPhoto := &entities.CatPhoto{ID: photoID}
-	err := r.db.QueryRowContext(ctx, query, photoID).Scan(&catPhoto.Url, &catPhoto.FileName, &catPhoto.FileSize, &catPhoto.MimeType, &catPhoto.IsPrimary, &catPhoto.CreatedAt)
+	err := r.db.QueryRowContext(ctx, query, photoID).Scan(&catPhoto.Url, &catPhoto.CatID, &catPhoto.FileName, &catPhoto.FileSize, &catPhoto.MimeType, &catPhoto.IsPrimary, &catPhoto.CreatedAt)
 	if err != nil {
 		return nil, err
 	}

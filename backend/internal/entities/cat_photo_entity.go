@@ -5,6 +5,7 @@ import "io"
 type CatPhoto struct {
 	ID        int    `json:"id" db:"id"`
 	Url       string `json:"url" db:"url"`
+	CatID     int    `json:"cat_id" db:"cat_id"`
 	FileName  string `json:"file_name" db:"file_name"`
 	FileSize  int    `json:"file_size" db:"file_size"`
 	MimeType  string `json:"mime_type" db:"mime_type"`
@@ -30,4 +31,8 @@ type CatPhotoUploadResponse struct {
 	ID       int    `json:"id" db:"id"`
 	Url      string `json:"url" db:"url"`
 	FileName string `json:"file_name" db:"file_name"`
+}
+
+type CatPhotoSetPrimaryResponse struct {
+	ID int `json:"id" db:"id"`
 }

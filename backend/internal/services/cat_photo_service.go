@@ -24,26 +24,38 @@ func (s *CatPhotoService) AddCatPhoto(ctx context.Context, catID int, req *entit
 
 	// Если новое фото имеет is_primary=true, то устанавливаем его в true через сервис
 	if req.IsPrimary {
-		_ = s.SetCatPhotoPrimary(ctx, catID, res.ID)
+		_, _ = s.SetCatPhotoPrimary(ctx, catID, res.ID)
 	}
 
 	return res, nil
 }
 
-func (s *CatPhotoService) DeleteCatPhoto(ctx context.Context, photoID int) error {
-	err := s.catPhotoRepository.DeleteCatPhoto(ctx, photoID)
+func (s *CatPhotoService) DeleteCatPhoto(ctx context.Context, catID, photoID int) error {
+	// Получаем информацию о фото
+	catPhoto, err := s.catPhotoRepository.GetCatPhotoByID(ctx, photoID)
+	if err != nil {
+		return fmt.Errorf("get cat photo error: %w", err)
+	}
+
+	// Проверяем, что фото принадлежит коту
+	if catPhoto.CatID != catID {
+		return fmt.Errorf("photo %d doesn't belong to cat %d", photoID, catID)
+	}
+
+	// Удаляем фото
+	err = s.catPhotoRepository.DeleteCatPhoto(ctx, photoID)
 	if err != nil {
 		return fmt.Errorf("delete cat photo error: %w", err)
 	}
 	return nil
 }
 
-func (s *CatPhotoService) SetCatPhotoPrimary(ctx context.Context, catID int, photoID int) error {
+func (s *CatPhotoService) SetCatPhotoPrimary(ctx context.Context, catID int, photoID int) (*entities.CatPhotoSetPrimaryResponse, error) {
 	err := s.catPhotoRepository.SetCatPhotoPrimary(ctx, catID, photoID)
 	if err != nil {
-		return fmt.Errorf("set cat photo primary error: %w", err)
+		return nil, fmt.Errorf("set cat photo primary error: %w", err)
 	}
-	return nil
+	return &entities.CatPhotoSetPrimaryResponse{ID: photoID}, nil
 }
 
 func (s *CatPhotoService) GetCatPhotoByID(ctx context.Context, photoID int) (*entities.CatPhoto, error) {

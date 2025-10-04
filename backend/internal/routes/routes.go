@@ -43,10 +43,12 @@ func SetupRoutes(app *fiber.App, container *dependency_injection.Container) {
 	// Middleware проверки прав собственности
 	api.Use("/auth/cat/:id", container.CatOwnershipMiddleware)
 	// Запросы с middleware
-	api.Post("/auth/cat/:id/photo", container.CatPhotoHandler.AddCatPhoto)
+	api.Post("/auth/cat/:id/photo/add", container.CatPhotoHandler.AddCatPhoto)
+	api.Post("/auth/cat/:id/photo/:photoID/primary", container.CatPhotoHandler.SetCatPhotoPrimary)
 	api.Put("/auth/cat/:id", container.CatHandler.UpdateCat)
 	api.Patch("/auth/cat/:id/name", container.CatHandler.UpdateCatName)
 	api.Patch("/auth/cat/:id/age", container.CatHandler.UpdateCatAge)
 	api.Patch("/auth/cat/:id/description", container.CatHandler.UpdateCatDescription)
 	api.Delete("/auth/cat/:id", container.CatHandler.DeleteCat)
+	api.Delete("/auth/cat/:id/photo/:photoID", container.CatPhotoHandler.DeleteCatPhoto)
 }
