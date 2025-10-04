@@ -26,7 +26,7 @@ func NewCatPhotoRepository(db *sql.DB, minioClient *minio.Client, endpoint, buck
 	}
 }
 
-func (r *CatPhotoRepository) AddCatPhoto(ctx context.Context, catID int, req *entities.CatPhotoUploadRequest) (*entities.CatPhotoUploadResponse, error) {
+func (r *CatPhotoRepository) AddCatPhoto(ctx context.Context, catID int, req *entities.CatPhotoUploadRequest) (*entities.CatPhotoUploadSuccess, error) {
 	// Генерируем уникальное имя файла
 	filename := generateFilename(catID, req.FileName)
 
@@ -45,14 +45,14 @@ func (r *CatPhotoRepository) AddCatPhoto(ctx context.Context, catID int, req *en
 	}
 
 	// Создаем тело ответа
-	res := &entities.CatPhotoUploadResponse{FileName: filename}
+	res := &entities.CatPhotoUploadSuccess{FileName: filename}
 
 	// Создаем публичный url, формат: http://localhost:9000/bucket-name/filename
 	res.Url = fmt.Sprintf("http://%s/%s/%s", r.endpoint, r.bucketName, filename)
 
-	// Сохраняем фото в бд
-	query := `INSERT INTO cat_photos (cat_id, url, filename, filesize, mime_type, is_primary) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id;`
-	err = r.db.QueryRowContext(ctx, query, catID, res.Url, filename, req.FileSize, req.MimeType, req.IsPrimary).Scan(&res.ID)
+	// Сохраняем фото в бд (is_primary = false)
+	query := `INSERT INTO cat_photos (cat_id, url, filename, filesize, mime_type) VALUES ($1, $2, $3, $4, $5) RETURNING id;`
+	err = r.db.QueryRowContext(ctx, query, catID, res.Url, filename, req.FileSize, req.MimeType).Scan(&res.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -60,21 +60,37 @@ func (r *CatPhotoRepository) AddCatPhoto(ctx context.Context, catID int, req *en
 	return res, nil
 }
 
-func (r *CatPhotoRepository) DeleteCatPhoto(ctx context.Context, photoID int) error {
-	// Удаляем файл из бд и получаем filename
-	var filename string
-	query := `DELETE FROM cat_photos WHERE id = $1 RETURNING filename;`
-	err := r.db.QueryRowContext(ctx, query, photoID).Scan(&filename)
+func (r *CatPhotoRepository) GetAllCatPhotos(ctx context.Context, catID int) ([]*entities.CatPhotoUrl, error) {
+	query := `SELECT id, url, is_primary FROM cat_photos WHERE cat_id = $1;`
+
+	rows, err := r.db.QueryContext(ctx, query, catID)
 	if err != nil {
-		return err
+		return nil, err
+	}
+	defer rows.Close()
+
+	var catPhotos []*entities.CatPhotoUrl
+	for rows.Next() {
+		catPhoto := &entities.CatPhotoUrl{}
+		err = rows.Scan(&catPhoto.ID, &catPhoto.Url, &catPhoto.IsPrimary)
+		if err != nil {
+			return nil, err
+		}
+		catPhotos = append(catPhotos, catPhoto)
 	}
 
-	// Удаляем файл из minio
-	err = r.minioClient.RemoveObject(ctx, r.bucketName, filename, minio.RemoveObjectOptions{})
+	return catPhotos, nil
+}
+
+func (r *CatPhotoRepository) GetCatPhotoByID(ctx context.Context, photoID int) (*entities.CatPhoto, error) {
+	query := `SELECT url, cat_id, filename, filesize, mime_type, is_primary, created_at FROM cat_photos WHERE id = $1;`
+
+	catPhoto := &entities.CatPhoto{ID: photoID}
+	err := r.db.QueryRowContext(ctx, query, photoID).Scan(&catPhoto.Url, &catPhoto.CatID, &catPhoto.FileName, &catPhoto.FileSize, &catPhoto.MimeType, &catPhoto.IsPrimary, &catPhoto.CreatedAt)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	return nil
+	return catPhoto, nil
 }
 
 func (r *CatPhotoRepository) SetCatPhotoPrimary(ctx context.Context, catID, photoID int) error {
@@ -115,37 +131,21 @@ func (r *CatPhotoRepository) SetCatPhotoPrimary(ctx context.Context, catID, phot
 	return nil
 }
 
-func (r *CatPhotoRepository) GetAllCatPhotos(ctx context.Context, catID int) ([]*entities.CatPhotoUrl, error) {
-	query := `SELECT id, url, is_primary FROM cat_photos WHERE cat_id = $1;`
-
-	rows, err := r.db.QueryContext(ctx, query, catID)
+func (r *CatPhotoRepository) DeleteCatPhoto(ctx context.Context, photoID int) error {
+	// Удаляем файл из бд и получаем filename
+	var filename string
+	query := `DELETE FROM cat_photos WHERE id = $1 RETURNING filename;`
+	err := r.db.QueryRowContext(ctx, query, photoID).Scan(&filename)
 	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	var catPhotos []*entities.CatPhotoUrl
-	for rows.Next() {
-		catPhoto := &entities.CatPhotoUrl{}
-		err = rows.Scan(&catPhoto.ID, &catPhoto.Url, &catPhoto.IsPrimary)
-		if err != nil {
-			return nil, err
-		}
-		catPhotos = append(catPhotos, catPhoto)
+		return err
 	}
 
-	return catPhotos, nil
-}
-
-func (r *CatPhotoRepository) GetCatPhotoByID(ctx context.Context, photoID int) (*entities.CatPhoto, error) {
-	query := `SELECT url, cat_id, filename, filesize, mime_type, is_primary, created_at FROM cat_photos WHERE id = $1;`
-
-	catPhoto := &entities.CatPhoto{ID: photoID}
-	err := r.db.QueryRowContext(ctx, query, photoID).Scan(&catPhoto.Url, &catPhoto.CatID, &catPhoto.FileName, &catPhoto.FileSize, &catPhoto.MimeType, &catPhoto.IsPrimary, &catPhoto.CreatedAt)
+	// Удаляем файл из minio
+	err = r.minioClient.RemoveObject(ctx, r.bucketName, filename, minio.RemoveObjectOptions{})
 	if err != nil {
-		return nil, err
+		return err
 	}
-	return catPhoto, nil
+	return nil
 }
 
 func generateFilename(catID int, fileName string) string {

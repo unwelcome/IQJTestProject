@@ -103,7 +103,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/auth/cat/{id}": {
+        "/auth/cat/id/{id}": {
             "get": {
                 "security": [
                     {
@@ -150,7 +150,9 @@ const docTemplate = `{
                         }
                     }
                 }
-            },
+            }
+        },
+        "/auth/cat/mw/{id}": {
             "put": {
                 "security": [
                     {
@@ -255,7 +257,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/auth/cat/{id}/age": {
+        "/auth/cat/mw/{id}/age": {
             "patch": {
                 "security": [
                     {
@@ -313,7 +315,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/auth/cat/{id}/description": {
+        "/auth/cat/mw/{id}/description": {
             "patch": {
                 "security": [
                     {
@@ -371,7 +373,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/auth/cat/{id}/name": {
+        "/auth/cat/mw/{id}/name": {
             "patch": {
                 "security": [
                     {
@@ -429,14 +431,14 @@ const docTemplate = `{
                 }
             }
         },
-        "/auth/cat/{id}/photo/add": {
+        "/auth/cat/mw/{id}/photo/add": {
             "post": {
                 "security": [
                     {
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Загружает фотографию для указанного кота",
+                "description": "Загружает фотографию для указанного кота (не более 20 файлов)",
                 "consumes": [
                     "multipart/form-data"
                 ],
@@ -444,7 +446,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "cat"
+                    "cat-photo"
                 ],
                 "summary": "Загрузить фото кота",
                 "parameters": [
@@ -456,17 +458,15 @@ const docTemplate = `{
                         "required": true
                     },
                     {
-                        "type": "file",
-                        "description": "Файл изображения",
-                        "name": "file",
+                        "type": "array",
+                        "items": {
+                            "type": "file"
+                        },
+                        "collectionFormat": "csv",
+                        "description": "Файлы изображений",
+                        "name": "files",
                         "in": "formData",
                         "required": true
-                    },
-                    {
-                        "type": "boolean",
-                        "description": "Сделать главным фото",
-                        "name": "is_primary",
-                        "in": "formData"
                     }
                 ],
                 "responses": {
@@ -485,13 +485,13 @@ const docTemplate = `{
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/entities.ErrorEntity"
+                            "$ref": "#/definitions/entities.CatPhotoUploadResponse"
                         }
                     }
                 }
             }
         },
-        "/auth/cat/{id}/photo/{photoID}": {
+        "/auth/cat/mw/{id}/photo/{photoID}": {
             "delete": {
                 "security": [
                     {
@@ -506,7 +506,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "cat"
+                    "cat-photo"
                 ],
                 "summary": "Удаление фото кота по ID",
                 "parameters": [
@@ -547,8 +547,8 @@ const docTemplate = `{
                 }
             }
         },
-        "/auth/cat/{id}/photo/{photoID}/primary": {
-            "post": {
+        "/auth/cat/mw/{id}/photo/{photoID}/primary": {
+            "patch": {
                 "security": [
                     {
                         "ApiKeyAuth": []
@@ -562,7 +562,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "cat"
+                    "cat-photo"
                 ],
                 "summary": "Выбор основного фото кота",
                 "parameters": [
@@ -586,6 +586,55 @@ const docTemplate = `{
                         "description": "OK",
                         "schema": {
                             "$ref": "#/definitions/entities.CatPhotoSetPrimaryResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/entities.ErrorEntity"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/entities.ErrorEntity"
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/cat/photo/{photoID}": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Получение всей информации о фото кота",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "cat-photo"
+                ],
+                "summary": "Получение фото кота",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Photo ID",
+                        "name": "photoID",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/entities.CatPhoto"
                         }
                     },
                     "400": {
@@ -1013,6 +1062,35 @@ const docTemplate = `{
                 }
             }
         },
+        "entities.CatPhoto": {
+            "type": "object",
+            "properties": {
+                "cat_id": {
+                    "type": "integer"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "file_name": {
+                    "type": "string"
+                },
+                "file_size": {
+                    "type": "integer"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "is_primary": {
+                    "type": "boolean"
+                },
+                "mime_type": {
+                    "type": "string"
+                },
+                "url": {
+                    "type": "string"
+                }
+            }
+        },
         "entities.CatPhotoSetPrimaryResponse": {
             "type": "object",
             "properties": {
@@ -1021,7 +1099,44 @@ const docTemplate = `{
                 }
             }
         },
+        "entities.CatPhotoUploadError": {
+            "type": "object",
+            "properties": {
+                "error": {
+                    "type": "string"
+                },
+                "file_name": {
+                    "type": "string"
+                }
+            }
+        },
         "entities.CatPhotoUploadResponse": {
+            "type": "object",
+            "properties": {
+                "errors": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/entities.CatPhotoUploadError"
+                    }
+                },
+                "failed_count": {
+                    "type": "integer"
+                },
+                "message": {
+                    "type": "string"
+                },
+                "uploaded_count": {
+                    "type": "integer"
+                },
+                "uploaded_photos": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/entities.CatPhotoUploadSuccess"
+                    }
+                }
+            }
+        },
+        "entities.CatPhotoUploadSuccess": {
             "type": "object",
             "properties": {
                 "file_name": {

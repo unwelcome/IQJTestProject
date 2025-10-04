@@ -23,12 +23,55 @@ definitions:
       id:
         type: integer
     type: object
+  entities.CatPhoto:
+    properties:
+      cat_id:
+        type: integer
+      created_at:
+        type: string
+      file_name:
+        type: string
+      file_size:
+        type: integer
+      id:
+        type: integer
+      is_primary:
+        type: boolean
+      mime_type:
+        type: string
+      url:
+        type: string
+    type: object
   entities.CatPhotoSetPrimaryResponse:
     properties:
       id:
         type: integer
     type: object
+  entities.CatPhotoUploadError:
+    properties:
+      error:
+        type: string
+      file_name:
+        type: string
+    type: object
   entities.CatPhotoUploadResponse:
+    properties:
+      errors:
+        items:
+          $ref: '#/definitions/entities.CatPhotoUploadError'
+        type: array
+      failed_count:
+        type: integer
+      message:
+        type: string
+      uploaded_count:
+        type: integer
+      uploaded_photos:
+        items:
+          $ref: '#/definitions/entities.CatPhotoUploadSuccess'
+        type: array
+    type: object
+  entities.CatPhotoUploadSuccess:
     properties:
       file_name:
         type: string
@@ -190,326 +233,6 @@ info:
   title: IQJ Test Task
   version: "1.0"
 paths:
-  /auth/cat/{id}:
-    delete:
-      consumes:
-      - application/json
-      description: Удаление кота
-      parameters:
-      - description: Cat ID
-        in: path
-        name: id
-        required: true
-        type: integer
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            type: string
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/entities.ErrorEntity'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/entities.ErrorEntity'
-      security:
-      - ApiKeyAuth: []
-      summary: Удаление кота
-      tags:
-      - cat
-    get:
-      consumes:
-      - application/json
-      description: Получение кота по ID
-      parameters:
-      - description: Cat ID
-        in: path
-        name: id
-        required: true
-        type: integer
-      produces:
-      - application/json
-      responses:
-        "201":
-          description: Created
-          schema:
-            $ref: '#/definitions/entities.CatWithPhotos'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/entities.ErrorEntity'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/entities.ErrorEntity'
-      security:
-      - ApiKeyAuth: []
-      summary: Получение кота по ID
-      tags:
-      - cat
-    put:
-      consumes:
-      - application/json
-      description: Обновление клички, возраста и описания кота
-      parameters:
-      - description: Cat ID
-        in: path
-        name: id
-        required: true
-        type: integer
-      - description: Данные кота
-        in: body
-        name: cat
-        required: true
-        schema:
-          $ref: '#/definitions/entities.CatUpdateRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/entities.CatUpdateResponse'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/entities.ErrorEntity'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/entities.ErrorEntity'
-      security:
-      - ApiKeyAuth: []
-      summary: Обновление клички, возраста и описания кота
-      tags:
-      - cat
-  /auth/cat/{id}/age:
-    patch:
-      consumes:
-      - application/json
-      description: Обновление возраста кота
-      parameters:
-      - description: Cat ID
-        in: path
-        name: id
-        required: true
-        type: integer
-      - description: Данные кота
-        in: body
-        name: cat
-        required: true
-        schema:
-          $ref: '#/definitions/entities.CatUpdateAgeRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/entities.CatUpdateAgeResponse'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/entities.ErrorEntity'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/entities.ErrorEntity'
-      security:
-      - ApiKeyAuth: []
-      summary: Обновление возраста кота
-      tags:
-      - cat
-  /auth/cat/{id}/description:
-    patch:
-      consumes:
-      - application/json
-      description: Обновление описания кота
-      parameters:
-      - description: Cat ID
-        in: path
-        name: id
-        required: true
-        type: integer
-      - description: Данные кота
-        in: body
-        name: cat
-        required: true
-        schema:
-          $ref: '#/definitions/entities.CatUpdateDescriptionRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/entities.CatUpdateDescriptionResponse'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/entities.ErrorEntity'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/entities.ErrorEntity'
-      security:
-      - ApiKeyAuth: []
-      summary: Обновление описания кота
-      tags:
-      - cat
-  /auth/cat/{id}/name:
-    patch:
-      consumes:
-      - application/json
-      description: Обновление клички кота
-      parameters:
-      - description: Cat ID
-        in: path
-        name: id
-        required: true
-        type: integer
-      - description: Данные кота
-        in: body
-        name: cat
-        required: true
-        schema:
-          $ref: '#/definitions/entities.CatUpdateNameRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/entities.CatUpdateNameResponse'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/entities.ErrorEntity'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/entities.ErrorEntity'
-      security:
-      - ApiKeyAuth: []
-      summary: Обновление клички кота
-      tags:
-      - cat
-  /auth/cat/{id}/photo/{photoID}:
-    delete:
-      consumes:
-      - application/json
-      description: Удаление фото кота по ID
-      parameters:
-      - description: Cat ID
-        in: path
-        name: id
-        required: true
-        type: integer
-      - description: Photo ID
-        in: path
-        name: photoID
-        required: true
-        type: integer
-      produces:
-      - application/json
-      responses:
-        "201":
-          description: Created
-          schema:
-            type: string
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/entities.ErrorEntity'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/entities.ErrorEntity'
-      security:
-      - ApiKeyAuth: []
-      summary: Удаление фото кота по ID
-      tags:
-      - cat
-  /auth/cat/{id}/photo/{photoID}/primary:
-    post:
-      consumes:
-      - application/json
-      description: Выбор основного фото кота
-      parameters:
-      - description: Cat ID
-        in: path
-        name: id
-        required: true
-        type: integer
-      - description: Photo ID
-        in: path
-        name: photoID
-        required: true
-        type: integer
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/entities.CatPhotoSetPrimaryResponse'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/entities.ErrorEntity'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/entities.ErrorEntity'
-      security:
-      - ApiKeyAuth: []
-      summary: Выбор основного фото кота
-      tags:
-      - cat
-  /auth/cat/{id}/photo/add:
-    post:
-      consumes:
-      - multipart/form-data
-      description: Загружает фотографию для указанного кота
-      parameters:
-      - description: Cat ID
-        in: path
-        name: id
-        required: true
-        type: integer
-      - description: Файл изображения
-        in: formData
-        name: file
-        required: true
-        type: file
-      - description: Сделать главным фото
-        in: formData
-        name: is_primary
-        type: boolean
-      produces:
-      - application/json
-      responses:
-        "201":
-          description: Created
-          schema:
-            $ref: '#/definitions/entities.CatPhotoUploadResponse'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/entities.ErrorEntity'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/entities.ErrorEntity'
-      security:
-      - ApiKeyAuth: []
-      summary: Загрузить фото кота
-      tags:
-      - cat
   /auth/cat/all:
     get:
       consumes:
@@ -565,6 +288,357 @@ paths:
       summary: Создание кота
       tags:
       - cat
+  /auth/cat/id/{id}:
+    get:
+      consumes:
+      - application/json
+      description: Получение кота по ID
+      parameters:
+      - description: Cat ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/entities.CatWithPhotos'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/entities.ErrorEntity'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/entities.ErrorEntity'
+      security:
+      - ApiKeyAuth: []
+      summary: Получение кота по ID
+      tags:
+      - cat
+  /auth/cat/mw/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Удаление кота
+      parameters:
+      - description: Cat ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/entities.ErrorEntity'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/entities.ErrorEntity'
+      security:
+      - ApiKeyAuth: []
+      summary: Удаление кота
+      tags:
+      - cat
+    put:
+      consumes:
+      - application/json
+      description: Обновление клички, возраста и описания кота
+      parameters:
+      - description: Cat ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Данные кота
+        in: body
+        name: cat
+        required: true
+        schema:
+          $ref: '#/definitions/entities.CatUpdateRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entities.CatUpdateResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/entities.ErrorEntity'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/entities.ErrorEntity'
+      security:
+      - ApiKeyAuth: []
+      summary: Обновление клички, возраста и описания кота
+      tags:
+      - cat
+  /auth/cat/mw/{id}/age:
+    patch:
+      consumes:
+      - application/json
+      description: Обновление возраста кота
+      parameters:
+      - description: Cat ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Данные кота
+        in: body
+        name: cat
+        required: true
+        schema:
+          $ref: '#/definitions/entities.CatUpdateAgeRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entities.CatUpdateAgeResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/entities.ErrorEntity'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/entities.ErrorEntity'
+      security:
+      - ApiKeyAuth: []
+      summary: Обновление возраста кота
+      tags:
+      - cat
+  /auth/cat/mw/{id}/description:
+    patch:
+      consumes:
+      - application/json
+      description: Обновление описания кота
+      parameters:
+      - description: Cat ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Данные кота
+        in: body
+        name: cat
+        required: true
+        schema:
+          $ref: '#/definitions/entities.CatUpdateDescriptionRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entities.CatUpdateDescriptionResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/entities.ErrorEntity'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/entities.ErrorEntity'
+      security:
+      - ApiKeyAuth: []
+      summary: Обновление описания кота
+      tags:
+      - cat
+  /auth/cat/mw/{id}/name:
+    patch:
+      consumes:
+      - application/json
+      description: Обновление клички кота
+      parameters:
+      - description: Cat ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Данные кота
+        in: body
+        name: cat
+        required: true
+        schema:
+          $ref: '#/definitions/entities.CatUpdateNameRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entities.CatUpdateNameResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/entities.ErrorEntity'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/entities.ErrorEntity'
+      security:
+      - ApiKeyAuth: []
+      summary: Обновление клички кота
+      tags:
+      - cat
+  /auth/cat/mw/{id}/photo/{photoID}:
+    delete:
+      consumes:
+      - application/json
+      description: Удаление фото кота по ID
+      parameters:
+      - description: Cat ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Photo ID
+        in: path
+        name: photoID
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/entities.ErrorEntity'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/entities.ErrorEntity'
+      security:
+      - ApiKeyAuth: []
+      summary: Удаление фото кота по ID
+      tags:
+      - cat-photo
+  /auth/cat/mw/{id}/photo/{photoID}/primary:
+    patch:
+      consumes:
+      - application/json
+      description: Выбор основного фото кота
+      parameters:
+      - description: Cat ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Photo ID
+        in: path
+        name: photoID
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entities.CatPhotoSetPrimaryResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/entities.ErrorEntity'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/entities.ErrorEntity'
+      security:
+      - ApiKeyAuth: []
+      summary: Выбор основного фото кота
+      tags:
+      - cat-photo
+  /auth/cat/mw/{id}/photo/add:
+    post:
+      consumes:
+      - multipart/form-data
+      description: Загружает фотографию для указанного кота (не более 20 файлов)
+      parameters:
+      - description: Cat ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - collectionFormat: csv
+        description: Файлы изображений
+        in: formData
+        items:
+          type: file
+        name: files
+        required: true
+        type: array
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/entities.CatPhotoUploadResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/entities.ErrorEntity'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/entities.CatPhotoUploadResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Загрузить фото кота
+      tags:
+      - cat-photo
+  /auth/cat/photo/{photoID}:
+    get:
+      consumes:
+      - application/json
+      description: Получение всей информации о фото кота
+      parameters:
+      - description: Photo ID
+        in: path
+        name: photoID
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entities.CatPhoto'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/entities.ErrorEntity'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/entities.ErrorEntity'
+      security:
+      - ApiKeyAuth: []
+      summary: Получение фото кота
+      tags:
+      - cat-photo
   /auth/logout:
     delete:
       consumes:

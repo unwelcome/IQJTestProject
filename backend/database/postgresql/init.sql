@@ -18,7 +18,7 @@ CREATE TABLE "cats" (
 
 CREATE TABLE "cat_photos" (
     "id" SERIAL PRIMARY KEY,
-    "cat_id" integer NOT NULL,
+    "cat_id" integer NOT NULL ON DELETE CASCADE,
     "url" text NOT NULL,
     "filename" text UNIQUE,
     "filesize" integer,

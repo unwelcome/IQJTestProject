@@ -58,7 +58,7 @@ func (h *CatHandler) CreateCat(c *fiber.Ctx) error {
 // @Success 201 {object} entities.CatWithPhotos
 // @Failure 400 {object} entities.ErrorEntity
 // @Failure 500 {object} entities.ErrorEntity
-// @Router /auth/cat/{id} [get]
+// @Router /auth/cat/id/{id} [get]
 func (h *CatHandler) GetCatByID(c *fiber.Ctx) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
@@ -112,7 +112,7 @@ func (h *CatHandler) GetAllCats(c *fiber.Ctx) error {
 // @Success 200 {object} entities.CatUpdateNameResponse
 // @Failure 400 {object} entities.ErrorEntity
 // @Failure 500 {object} entities.ErrorEntity
-// @Router /auth/cat/{id}/name [patch]
+// @Router /auth/cat/mw/{id}/name [patch]
 func (h *CatHandler) UpdateCatName(c *fiber.Ctx) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
@@ -143,7 +143,7 @@ func (h *CatHandler) UpdateCatName(c *fiber.Ctx) error {
 // @Success 200 {object} entities.CatUpdateAgeResponse
 // @Failure 400 {object} entities.ErrorEntity
 // @Failure 500 {object} entities.ErrorEntity
-// @Router /auth/cat/{id}/age [patch]
+// @Router /auth/cat/mw/{id}/age [patch]
 func (h *CatHandler) UpdateCatAge(c *fiber.Ctx) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
@@ -174,7 +174,7 @@ func (h *CatHandler) UpdateCatAge(c *fiber.Ctx) error {
 // @Success 200 {object} entities.CatUpdateDescriptionResponse
 // @Failure 400 {object} entities.ErrorEntity
 // @Failure 500 {object} entities.ErrorEntity
-// @Router /auth/cat/{id}/description [patch]
+// @Router /auth/cat/mw/{id}/description [patch]
 func (h *CatHandler) UpdateCatDescription(c *fiber.Ctx) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
@@ -205,7 +205,7 @@ func (h *CatHandler) UpdateCatDescription(c *fiber.Ctx) error {
 // @Success 200 {object} entities.CatUpdateResponse
 // @Failure 400 {object} entities.ErrorEntity
 // @Failure 500 {object} entities.ErrorEntity
-// @Router /auth/cat/{id} [put]
+// @Router /auth/cat/mw/{id} [put]
 func (h *CatHandler) UpdateCat(c *fiber.Ctx) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
@@ -235,7 +235,7 @@ func (h *CatHandler) UpdateCat(c *fiber.Ctx) error {
 // @Success 200 {object} string
 // @Failure 400 {object} entities.ErrorEntity
 // @Failure 500 {object} entities.ErrorEntity
-// @Router /auth/cat/{id} [delete]
+// @Router /auth/cat/mw/{id} [delete]
 func (h *CatHandler) DeleteCat(c *fiber.Ctx) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()

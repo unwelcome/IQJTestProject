@@ -36,19 +36,21 @@ func SetupRoutes(app *fiber.App, container *dependency_injection.Container) {
 	api.Patch("/auth/user/password", container.UserHandler.UpdateUserPassword)
 
 	// Cat запросы
-	// Общие запросы
 	api.Get("/auth/cat/all", container.CatHandler.GetAllCats)
-	api.Get("/auth/cat/:id", container.CatHandler.GetCatByID)
+	api.Get("/auth/cat/id/:id", container.CatHandler.GetCatByID)
 	api.Post("/auth/cat/create", container.CatHandler.CreateCat)
-	// Middleware проверки прав собственности
-	api.Use("/auth/cat/:id", container.CatOwnershipMiddleware)
-	// Запросы с middleware
-	api.Post("/auth/cat/:id/photo/add", container.CatPhotoHandler.AddCatPhoto)
-	api.Post("/auth/cat/:id/photo/:photoID/primary", container.CatPhotoHandler.SetCatPhotoPrimary)
-	api.Put("/auth/cat/:id", container.CatHandler.UpdateCat)
-	api.Patch("/auth/cat/:id/name", container.CatHandler.UpdateCatName)
-	api.Patch("/auth/cat/:id/age", container.CatHandler.UpdateCatAge)
-	api.Patch("/auth/cat/:id/description", container.CatHandler.UpdateCatDescription)
-	api.Delete("/auth/cat/:id", container.CatHandler.DeleteCat)
-	api.Delete("/auth/cat/:id/photo/:photoID", container.CatPhotoHandler.DeleteCatPhoto)
+
+	// Middleware проверки прав собственности пользователя на кота
+	api.Use("/auth/cat/mw/:id", container.CatOwnershipMiddleware)
+	api.Put("/auth/cat/mw/:id", container.CatHandler.UpdateCat)
+	api.Patch("/auth/cat/mw/:id/name", container.CatHandler.UpdateCatName)
+	api.Patch("/auth/cat/mw/:id/age", container.CatHandler.UpdateCatAge)
+	api.Patch("/auth/cat/mw/:id/description", container.CatHandler.UpdateCatDescription)
+	api.Delete("/auth/cat/mw/:id", container.CatHandler.DeleteCat)
+
+	// Cat photo запросы
+	api.Get("/auth/cat/photo/:photoID", container.CatPhotoHandler.GetCatPhotoByID)
+	api.Post("/auth/cat/mw/:id/photo/add", container.CatPhotoHandler.AddCatPhotos)
+	api.Patch("/auth/cat/mw/:id/photo/:photoID/primary", container.CatPhotoHandler.SetCatPhotoPrimary)
+	api.Delete("/auth/cat/mw/:id/photo/:photoID", container.CatPhotoHandler.DeleteCatPhoto)
 }

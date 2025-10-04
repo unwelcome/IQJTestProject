@@ -16,15 +16,11 @@ func NewCatPhotoService(catPhotoRepository *repositories.CatPhotoRepository) *Ca
 	return &CatPhotoService{catPhotoRepository: catPhotoRepository}
 }
 
-func (s *CatPhotoService) AddCatPhoto(ctx context.Context, catID int, req *entities.CatPhotoUploadRequest) (*entities.CatPhotoUploadResponse, error) {
+func (s *CatPhotoService) AddCatPhoto(ctx context.Context, catID int, req *entities.CatPhotoUploadRequest) (*entities.CatPhotoUploadSuccess, error) {
+	// Загружаем фото кота
 	res, err := s.catPhotoRepository.AddCatPhoto(ctx, catID, req)
 	if err != nil {
 		return nil, fmt.Errorf("add cat photo error: %w", err)
-	}
-
-	// Если новое фото имеет is_primary=true, то устанавливаем его в true через сервис
-	if req.IsPrimary {
-		_, _ = s.SetCatPhotoPrimary(ctx, catID, res.ID)
 	}
 
 	return res, nil
