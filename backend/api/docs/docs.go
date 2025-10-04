@@ -61,7 +61,7 @@ const docTemplate = `{
                 ],
                 "description": "Создает нового кота",
                 "consumes": [
-                    "application/json"
+                    "multipart/form-data"
                 ],
                 "produces": [
                     "application/json"
@@ -72,13 +72,36 @@ const docTemplate = `{
                 "summary": "Создание кота",
                 "parameters": [
                     {
-                        "description": "Данные кота",
-                        "name": "cat",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/entities.CatCreateRequest"
-                        }
+                        "type": "string",
+                        "description": "Кличка кота",
+                        "name": "name",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Возраст кота",
+                        "name": "age",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Описание кота",
+                        "name": "description",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "array",
+                        "items": {
+                            "type": "file"
+                        },
+                        "collectionFormat": "csv",
+                        "description": "Файлы изображений",
+                        "name": "files",
+                        "in": "formData",
+                        "required": true
                     }
                 ],
                 "responses": {
@@ -1040,25 +1063,14 @@ const docTemplate = `{
                 }
             }
         },
-        "entities.CatCreateRequest": {
-            "type": "object",
-            "properties": {
-                "age": {
-                    "type": "integer"
-                },
-                "description": {
-                    "type": "string"
-                },
-                "name": {
-                    "type": "string"
-                }
-            }
-        },
         "entities.CatCreateResponse": {
             "type": "object",
             "properties": {
                 "id": {
                     "type": "integer"
+                },
+                "photo": {
+                    "$ref": "#/definitions/entities.CatPhotoUploadResponse"
                 }
             }
         },

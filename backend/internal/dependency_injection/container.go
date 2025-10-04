@@ -79,8 +79,8 @@ func (c *Container) InitRepositories(postgres *sql.DB, redis *redis.Client, mini
 func (c *Container) InitServices(cfg *config.Config) {
 	c.userService = services.NewUserService(c.userRepository)
 	c.authService = services.NewAuthService(c.userService, c.authRepository, cfg.JWTSecret, cfg.AccessTokenLifetime, cfg.RefreshTokenLifetime)
-	c.catService = services.NewCatService(c.catRepository, c.catPhotoRepository)
 	c.catPhotoService = services.NewCatPhotoService(c.catPhotoRepository)
+	c.catService = services.NewCatService(c.catRepository, c.catPhotoService)
 }
 
 func (c *Container) InitHandlers() {

@@ -1,5 +1,7 @@
 package entities
 
+import "mime/multipart"
+
 type Cat struct {
 	ID          int    `json:"id" db:"id"`
 	Name        string `json:"name" db:"name"`
@@ -27,14 +29,20 @@ type CatWithPrimePhoto struct {
 	Url     *string `json:"url" db:"url"`
 }
 
-type CatCreateRequest struct {
-	Name        string `json:"name" db:"name"`
-	Age         int    `json:"age" db:"age"`
-	Description string `json:"description" db:"description"`
+type CatCreateRequestWithPhotos struct {
+	Fields *CatCreateRequestFields
+	Photos []*multipart.FileHeader
+}
+
+type CatCreateRequestFields struct {
+	Name        string `form:"name" json:"name" db:"name"`
+	Age         int    `form:"age" json:"age" db:"age"`
+	Description string `form:"description" json:"description" db:"description"`
 }
 
 type CatCreateResponse struct {
-	ID int `json:"id" db:"id"`
+	ID    int                     `json:"id" db:"id"`
+	Photo *CatPhotoUploadResponse `json:"photo"`
 }
 
 type CatUpdateRequest struct {

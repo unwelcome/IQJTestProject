@@ -4,9 +4,8 @@ import (
 	"context"
 	"fmt"
 	"github.com/gofiber/fiber/v2"
-	"github.com/unwelcome/iqjtest/internal/entities"
 	"github.com/unwelcome/iqjtest/internal/services"
-	"mime/multipart"
+	"github.com/unwelcome/iqjtest/pkg/utils"
 	"time"
 )
 
@@ -35,103 +34,22 @@ func (h *CatPhotoHandler) AddCatPhotos(c *fiber.Ctx) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	// Парсим multipart/form-data
-	form, err := c.MultipartForm()
+	// Получаем файлы из multipart/formData
+	files, err := utils.GetFilesFromFormData(c, "files", 20)
 	if err != nil {
-		return c.Status(400).JSON(fiber.Map{"error": "failed to parse multipart form"})
-	}
-
-	// Получаем файлы
-	files := form.File["files"]
-	if len(files) == 0 {
-		return c.Status(400).JSON(fiber.Map{"error": "no file found in form"})
-	}
-
-	if len(files) > 20 {
-		return c.Status(400).JSON(fiber.Map{"error": "too many files in form"})
+		return c.Status(400).JSON(fiber.Map{"error": err.Error()})
 	}
 
 	catID := c.Locals("catID").(int)
-	var uploadedPhotos []*entities.CatPhotoUploadSuccess
-	var errors []*entities.CatPhotoUploadError
 
-	// Проходимся по каждому фото
-	for _, file := range files {
-
-		// Проверяем содержимое файла
-		if file.Size == 0 {
-			errors = append(errors, &entities.CatPhotoUploadError{
-				FileName: file.Filename,
-				Error:    "file is empty",
-			})
-			continue
-		}
-
-		// Проверяем размер файла (макс. 50МБ)
-		if file.Size > 50*1024*1024 {
-			errors = append(errors, &entities.CatPhotoUploadError{
-				FileName: file.Filename,
-				Error:    "file is too large",
-			})
-			continue
-		}
-
-		// Проверяем тип файла
-		if !isImageFile(file) {
-			errors = append(errors, &entities.CatPhotoUploadError{
-				FileName: file.Filename,
-				Error:    "file must be an image file (jpg, png, webp)",
-			})
-			continue
-		}
-
-		// Открываем файл
-		fileReader, err := file.Open()
-		if err != nil {
-			errors = append(errors, &entities.CatPhotoUploadError{
-				FileName: file.Filename,
-				Error:    "failed to open file",
-			})
-			continue
-		}
-		defer fileReader.Close()
-
-		// Подготавливаем данные для передачи в сервис
-		req := &entities.CatPhotoUploadRequest{
-			File:     fileReader,
-			FileSize: file.Size,
-			FileName: file.Filename,
-			MimeType: file.Header.Get("Content-Type"),
-		}
-
-		// Загружаем фото
-		success, err := h.catPhotoService.AddCatPhoto(ctx, catID, req)
-		if err != nil {
-			errors = append(errors, &entities.CatPhotoUploadError{
-				FileName: file.Filename,
-				Error:    "failed to save file",
-			})
-			continue
-		}
-
-		// Добавляем данные фото в массив
-		uploadedPhotos = append(uploadedPhotos, success)
-	}
-
-	// Подготавливаем тело ответа
-	response := &entities.CatPhotoUploadResponse{
-		Message:        fmt.Sprintf("Uploaded %d out of %d files", len(uploadedPhotos), len(files)),
-		UploadedCount:  len(uploadedPhotos),
-		FailedCount:    len(errors),
-		UploadedPhotos: uploadedPhotos,
-		Errors:         errors,
-	}
+	// Загружаем фото
+	catPhotoUploadResponse := h.catPhotoService.AddCatPhoto(ctx, catID, files)
 
 	// Отправляем результат
-	if len(uploadedPhotos) > 0 {
-		return c.Status(201).JSON(response)
+	if catPhotoUploadResponse.UploadedCount > 0 {
+		return c.Status(201).JSON(catPhotoUploadResponse)
 	}
-	return c.Status(500).JSON(response)
+	return c.Status(500).JSON(catPhotoUploadResponse)
 }
 
 // GetCatPhotoByID
@@ -232,16 +150,4 @@ func getPhotoID(c *fiber.Ctx) (int, error) {
 		return 0, fmt.Errorf("invalid photo id")
 	}
 	return photoID, nil
-}
-
-func isImageFile(fileHeader *multipart.FileHeader) bool {
-	allowedTypes := map[string]bool{
-		"image/jpeg": true,
-		"image/jpg":  true,
-		"image/png":  true,
-		"image/webp": true,
-	}
-
-	contentType := fileHeader.Header.Get("Content-Type")
-	return allowedTypes[contentType]
 }

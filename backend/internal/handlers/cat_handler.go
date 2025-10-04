@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"context"
+	"github.com/unwelcome/iqjtest/pkg/utils"
 	"time"
 
 	"github.com/gofiber/fiber/v2"
@@ -21,10 +22,13 @@ func NewCatHandler(catService *services.CatService) *CatHandler {
 // @Summary Создание кота
 // @Description Создает нового кота
 // @Tags cat
-// @Accept json
+// @Accept multipart/form-data
 // @Produce json
 // @Security ApiKeyAuth
-// @Param cat body entities.CatCreateRequest true "Данные кота"
+// @Param name formData string true "Кличка кота"
+// @Param age formData integer true "Возраст кота"
+// @Param description formData string true "Описание кота"
+// @Param files formData []file true "Файлы изображений"
 // @Success 201 {object} entities.CatCreateResponse
 // @Failure 400 {object} entities.ErrorEntity
 // @Failure 500 {object} entities.ErrorEntity
@@ -33,13 +37,27 @@ func (h *CatHandler) CreateCat(c *fiber.Ctx) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	createCatRequest := &entities.CatCreateRequest{}
-	if err := c.BodyParser(&createCatRequest); err != nil {
-		return c.Status(400).JSON(fiber.Map{"error": "Invalid input"})
+	// Парсим текстовые поля из formData
+	fields := &entities.CatCreateRequestFields{}
+	if err := c.BodyParser(fields); err != nil {
+		return c.Status(400).JSON(fiber.Map{"error": "missing formData fields: " + err.Error()})
+	}
+
+	// Получаем файлы из multipart/formData
+	files, err := utils.GetFilesFromFormData(c, "files", 20)
+	if err != nil {
+		return c.Status(400).JSON(fiber.Map{"error": err.Error()})
+	}
+
+	// Создаем тело запроса
+	createCatRequest := &entities.CatCreateRequestWithPhotos{
+		Fields: fields,
+		Photos: files,
 	}
 
 	userID := c.Locals("userID").(int)
 
+	// Создаем кота
 	createCatResponse, err := h.catService.CreateCat(ctx, userID, createCatRequest)
 	if err != nil {
 		return c.Status(500).JSON(fiber.Map{"error": err.Error()})

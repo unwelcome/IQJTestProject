@@ -3,6 +3,8 @@ package services
 import (
 	"context"
 	"fmt"
+	"github.com/unwelcome/iqjtest/pkg/utils"
+	"mime/multipart"
 
 	"github.com/unwelcome/iqjtest/internal/entities"
 	"github.com/unwelcome/iqjtest/internal/repositories"
@@ -16,14 +18,96 @@ func NewCatPhotoService(catPhotoRepository *repositories.CatPhotoRepository) *Ca
 	return &CatPhotoService{catPhotoRepository: catPhotoRepository}
 }
 
-func (s *CatPhotoService) AddCatPhoto(ctx context.Context, catID int, req *entities.CatPhotoUploadRequest) (*entities.CatPhotoUploadSuccess, error) {
-	// Загружаем фото кота
-	res, err := s.catPhotoRepository.AddCatPhoto(ctx, catID, req)
-	if err != nil {
-		return nil, fmt.Errorf("add cat photo error: %w", err)
+func (s *CatPhotoService) AddCatPhoto(ctx context.Context, catID int, photos []*multipart.FileHeader) *entities.CatPhotoUploadResponse {
+
+	// Создаем массив загруженных фото и массив с ошибками загрузки
+	var uploadedPhotos []*entities.CatPhotoUploadSuccess
+	var errors []*entities.CatPhotoUploadError
+
+	// Проходимся по каждому фото
+	for _, file := range photos {
+
+		// Проверяем размер файла
+		err := utils.CheckFileSize(file, 50*1024*1024)
+		if err != nil {
+			errors = append(errors, &entities.CatPhotoUploadError{
+				FileName: file.Filename,
+				Error:    err.Error(),
+			})
+			continue
+		}
+
+		// Проверяем тип файла
+		if !utils.IsImageFile(file) {
+			errors = append(errors, &entities.CatPhotoUploadError{
+				FileName: file.Filename,
+				Error:    "file must be an image file (jpg, png, webp)",
+			})
+			continue
+		}
+
+		// Открываем файл
+		fileReader, err := file.Open()
+		if err != nil {
+			errors = append(errors, &entities.CatPhotoUploadError{
+				FileName: file.Filename,
+				Error:    "failed to open file",
+			})
+			continue
+		}
+		defer fileReader.Close()
+
+		// Загружаем фото
+		success, err := s.catPhotoRepository.AddCatPhoto(ctx, catID, &entities.CatPhotoUploadRequest{
+			File:     fileReader,
+			FileName: file.Filename,
+			FileSize: file.Size,
+			MimeType: file.Header.Get("Content-Type"),
+		})
+		if err != nil {
+			errors = append(errors, &entities.CatPhotoUploadError{
+				FileName: file.Filename,
+				Error:    fmt.Sprintf("add photo error: %w", err),
+			})
+			continue
+		}
+		uploadedPhotos = append(uploadedPhotos, success)
 	}
 
-	return res, nil
+	// Создаем отчет о загрузке фото
+	catPhotoUploadResponse := &entities.CatPhotoUploadResponse{
+		Message:        fmt.Sprintf("Uploaded %d out of %d photos", len(uploadedPhotos), len(photos)),
+		UploadedCount:  len(uploadedPhotos),
+		FailedCount:    len(errors),
+		UploadedPhotos: uploadedPhotos,
+		Errors:         errors,
+	}
+
+	return catPhotoUploadResponse
+}
+
+func (s *CatPhotoService) GetCatPhotoByID(ctx context.Context, photoID int) (*entities.CatPhoto, error) {
+	catPhoto, err := s.catPhotoRepository.GetCatPhotoByID(ctx, photoID)
+	if err != nil {
+		return nil, fmt.Errorf("get cat photo by id error: %w", err)
+	}
+	return catPhoto, nil
+}
+
+func (s *CatPhotoService) GetAllCatPhotos(ctx context.Context, catID int) ([]*entities.CatPhotoUrl, error) {
+	catPhotosUrl, err := s.catPhotoRepository.GetAllCatPhotos(ctx, catID)
+	if err != nil {
+		return nil, fmt.Errorf("get all cat photo error: %w", err)
+	}
+	return catPhotosUrl, nil
+}
+
+func (s *CatPhotoService) SetCatPhotoPrimary(ctx context.Context, catID int, photoID int) (*entities.CatPhotoSetPrimaryResponse, error) {
+	err := s.catPhotoRepository.SetCatPhotoPrimary(ctx, catID, photoID)
+	if err != nil {
+		return nil, fmt.Errorf("set cat photo primary error: %w", err)
+	}
+	return &entities.CatPhotoSetPrimaryResponse{ID: photoID}, nil
 }
 
 func (s *CatPhotoService) DeleteCatPhoto(ctx context.Context, catID, photoID int) error {
@@ -46,18 +130,10 @@ func (s *CatPhotoService) DeleteCatPhoto(ctx context.Context, catID, photoID int
 	return nil
 }
 
-func (s *CatPhotoService) SetCatPhotoPrimary(ctx context.Context, catID int, photoID int) (*entities.CatPhotoSetPrimaryResponse, error) {
-	err := s.catPhotoRepository.SetCatPhotoPrimary(ctx, catID, photoID)
+func (s *CatPhotoService) DeleteAllCatPhotos(ctx context.Context, catID int) error {
+	err := s.catPhotoRepository.DeleteAllCatPhotos(ctx, catID)
 	if err != nil {
-		return nil, fmt.Errorf("set cat photo primary error: %w", err)
+		return fmt.Errorf("delete all cat photos error: %w", err)
 	}
-	return &entities.CatPhotoSetPrimaryResponse{ID: photoID}, nil
-}
-
-func (s *CatPhotoService) GetCatPhotoByID(ctx context.Context, photoID int) (*entities.CatPhoto, error) {
-	catPhoto, err := s.catPhotoRepository.GetCatPhotoByID(ctx, photoID)
-	if err != nil {
-		return nil, fmt.Errorf("get cat photo by id error: %w", err)
-	}
-	return catPhoto, nil
+	return nil
 }

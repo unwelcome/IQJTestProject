@@ -9,19 +9,12 @@ definitions:
       refresh_token:
         type: string
     type: object
-  entities.CatCreateRequest:
-    properties:
-      age:
-        type: integer
-      description:
-        type: string
-      name:
-        type: string
-    type: object
   entities.CatCreateResponse:
     properties:
       id:
         type: integer
+      photo:
+        $ref: '#/definitions/entities.CatPhotoUploadResponse'
     type: object
   entities.CatPhoto:
     properties:
@@ -259,15 +252,32 @@ paths:
   /auth/cat/create:
     post:
       consumes:
-      - application/json
+      - multipart/form-data
       description: Создает нового кота
       parameters:
-      - description: Данные кота
-        in: body
-        name: cat
+      - description: Кличка кота
+        in: formData
+        name: name
         required: true
-        schema:
-          $ref: '#/definitions/entities.CatCreateRequest'
+        type: string
+      - description: Возраст кота
+        in: formData
+        name: age
+        required: true
+        type: integer
+      - description: Описание кота
+        in: formData
+        name: description
+        required: true
+        type: string
+      - collectionFormat: csv
+        description: Файлы изображений
+        in: formData
+        items:
+          type: file
+        name: files
+        required: true
+        type: array
       produces:
       - application/json
       responses:
