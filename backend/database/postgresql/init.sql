@@ -18,7 +18,7 @@ CREATE TABLE "cats" (
 
 CREATE TABLE "cat_photos" (
     "id" SERIAL PRIMARY KEY,
-    "cat_id" integer NOT NULL ON DELETE CASCADE,
+    "cat_id" integer NOT NULL,
     "url" text NOT NULL,
     "filename" text UNIQUE,
     "filesize" integer,
@@ -31,5 +31,5 @@ CREATE INDEX idx_users_login ON users(login);
 CREATE INDEX idx_cat_photos_cat_id ON cat_photos(cat_id);
 CREATE INDEX idx_cat_photos_primary ON cat_photos(cat_id, is_primary);
 
-ALTER TABLE "cats" ADD CONSTRAINT "cats_to_users" FOREIGN KEY ("created_by") REFERENCES "users" ("id");
-ALTER TABLE "cat_photos" ADD CONSTRAINT "cat_photos_to_cats" FOREIGN KEY ("cat_id") REFERENCES "cats" ("id");
+ALTER TABLE "cats" ADD CONSTRAINT "cats_to_users" FOREIGN KEY ("created_by") REFERENCES "users" ("id") ON DELETE CASCADE;
+ALTER TABLE "cat_photos" ADD CONSTRAINT "cat_photos_to_cats" FOREIGN KEY ("cat_id") REFERENCES "cats" ("id") ON DELETE CASCADE;

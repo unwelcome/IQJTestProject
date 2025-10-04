@@ -151,6 +151,37 @@ func (r *CatPhotoRepository) DeleteCatPhoto(ctx context.Context, photoID int) er
 	return nil
 }
 
+func (r *CatPhotoRepository) DeleteAllCatPhotos(ctx context.Context, catID int) error {
+	prefix := fmt.Sprintf("cat/%d/", catID)
+
+	// Создаем канал для записи объектов
+	objectCh := make(chan minio.ObjectInfo)
+
+	// Создаем горутину
+	go func() {
+		defer close(objectCh)
+
+		// Записываем в канал все фото кота
+		for object := range r.minioClient.ListObjects(ctx, r.bucketName, minio.ListObjectsOptions{
+			Prefix:    prefix,
+			Recursive: true,
+		}) {
+			if object.Err != nil {
+				continue
+			}
+			objectCh <- object
+		}
+	}()
+
+	// Удаляем все фото кота
+	errorCh := r.minioClient.RemoveObjects(ctx, r.bucketName, objectCh, minio.RemoveObjectsOptions{})
+	for removeErr := range errorCh {
+		return fmt.Errorf("failed to remove photo %s: %w", removeErr.ObjectName, removeErr.Err)
+	}
+
+	return nil
+}
+
 func generateFilename(catID int, fileName string) string {
 	// Извлекаем расширение файла
 	ext := filepath.Ext(fileName)

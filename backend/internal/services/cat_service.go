@@ -103,12 +103,13 @@ func (s *CatService) UpdateCat(ctx context.Context, catID int, catUpdateRequest 
 	}, nil
 }
 
-//TODO
-// удалять все фото кота перед удалением кота
-
 func (s *CatService) DeleteCat(ctx context.Context, catID int) error {
+	err := s.catPhotoRepository.DeleteAllCatPhotos(ctx, catID)
+	if err != nil {
+		return fmt.Errorf("delete cat photo error: %s", err.Error())
+	}
 
-	err := s.catRepository.DeleteCat(ctx, catID)
+	err = s.catRepository.DeleteCat(ctx, catID)
 	if err != nil {
 		return fmt.Errorf("delete cat error: %s", err.Error())
 	}
