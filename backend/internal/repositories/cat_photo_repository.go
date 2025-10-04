@@ -61,8 +61,9 @@ func (r *CatPhotoRepository) AddCatPhoto(ctx context.Context, catID int, req *en
 }
 
 func (r *CatPhotoRepository) GetAllCatPhotos(ctx context.Context, catID int) ([]*entities.CatPhotoUrl, error) {
-	query := `SELECT id, url, is_primary FROM cat_photos WHERE cat_id = $1;`
+	query := `SELECT id, url, is_primary FROM cat_photos WHERE cat_id = $1 ORDER BY is_primary DESC, id ASC;`
 
+	// Выполняем запрос в бд
 	rows, err := r.db.QueryContext(ctx, query, catID)
 	if err != nil {
 		return nil, err
@@ -70,6 +71,8 @@ func (r *CatPhotoRepository) GetAllCatPhotos(ctx context.Context, catID int) ([]
 	defer rows.Close()
 
 	var catPhotos []*entities.CatPhotoUrl
+
+	// Меппинг ответа в структуру
 	for rows.Next() {
 		catPhoto := &entities.CatPhotoUrl{}
 		err = rows.Scan(&catPhoto.ID, &catPhoto.Url, &catPhoto.IsPrimary)

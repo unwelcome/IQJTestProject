@@ -9,11 +9,12 @@ import (
 )
 
 type CatService struct {
-	catRepository *repositories.CatRepository
+	catRepository      *repositories.CatRepository
+	catPhotoRepository *repositories.CatPhotoRepository
 }
 
-func NewCatService(catRepository *repositories.CatRepository) *CatService {
-	return &CatService{catRepository: catRepository}
+func NewCatService(catRepository *repositories.CatRepository, catPhotoRepository *repositories.CatPhotoRepository) *CatService {
+	return &CatService{catRepository: catRepository, catPhotoRepository: catPhotoRepository}
 }
 
 func (s *CatService) CreateCat(ctx context.Context, userID int, catCreateRequest *entities.CatCreateRequest) (*entities.CatCreateResponse, error) {
@@ -31,11 +32,30 @@ func (s *CatService) CreateCat(ctx context.Context, userID int, catCreateRequest
 }
 
 func (s *CatService) GetCatByID(ctx context.Context, catID int) (*entities.CatWithPhotos, error) {
+	// Получаем данные кота
 	cat, err := s.catRepository.GetCatByID(ctx, catID)
 	if err != nil {
-		return nil, fmt.Errorf("get cat by id error: %s", err.Error())
+		return nil, fmt.Errorf("get cat by id error: %w", err)
 	}
-	return cat, nil
+
+	// Получаем все фото кота
+	catPhotos, err := s.catPhotoRepository.GetAllCatPhotos(ctx, catID)
+	if err != nil {
+		return nil, fmt.Errorf("get cat photo error: %w", err)
+	}
+
+	// Подготавливаем тело ответа
+	catWithPhotos := &entities.CatWithPhotos{
+		ID:          catID,
+		Name:        cat.Name,
+		Age:         cat.Age,
+		Description: cat.Description,
+		CreatedBy:   cat.CreatedBy,
+		CreatedAt:   cat.CreatedAt,
+		Photos:      catPhotos,
+	}
+
+	return catWithPhotos, nil
 }
 
 func (s *CatService) GetAllCats(ctx context.Context) ([]*entities.CatWithPrimePhoto, error) {
@@ -87,6 +107,7 @@ func (s *CatService) UpdateCat(ctx context.Context, catID int, catUpdateRequest 
 // удалять все фото кота перед удалением кота
 
 func (s *CatService) DeleteCat(ctx context.Context, catID int) error {
+
 	err := s.catRepository.DeleteCat(ctx, catID)
 	if err != nil {
 		return fmt.Errorf("delete cat error: %s", err.Error())
