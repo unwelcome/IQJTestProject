@@ -11,8 +11,10 @@ import (
 )
 
 type Config struct {
-	AppHost string
-	AppPort string
+	AppInternalHost string
+	AppInternalPort string
+	AppPublicHost   string
+	AppPublicPort   string
 
 	DBHost     string
 	DBPort     string
@@ -46,8 +48,10 @@ func LoadConfig(l zerolog.Logger) *Config {
 	cfg := &Config{}
 
 	// Инициализируем данные из env файла для App
-	cfg.AppHost = "localhost"
-	cfg.AppPort = getEnv("BACKEND_PORT", "8080")
+	cfg.AppInternalHost = "localhost"
+	cfg.AppInternalPort = getEnv("BACKEND_INTERNAL_PORT", "8080")
+	cfg.AppPublicHost = "localhost"
+	cfg.AppPublicPort = getEnv("BACKEND_PUBLIC_PORT", "8080")
 
 	// Инициализируем данные из env файла для основной DB
 	cfg.DBHost = "localhost"
@@ -72,7 +76,8 @@ func LoadConfig(l zerolog.Logger) *Config {
 
 	// Для запуска через Docker
 	if getEnv("IS_DOCKER", "") == "true" {
-		cfg.AppHost = getEnv("BACKEND_HOST", "localhost")
+		cfg.AppInternalHost = getEnv("BACKEND_INTERNAL_HOST", "0.0.0.0")
+		cfg.AppPublicHost = getEnv("BACKEND_PUBLIC_HOST", "localhost")
 		cfg.DBHost = getEnv("POSTGRES_HOST", "postgres")
 		cfg.CacheHost = getEnv("REDIS_HOST", "redis")
 		cfg.S3Host = getEnv("MINIO_HOST", "minio")
@@ -88,6 +93,8 @@ func LoadConfig(l zerolog.Logger) *Config {
 		"catPhotoBucket": &minio.Bucket{Name: "cat-photo-bucket", IsOpen: true},
 	}
 
+	l.Trace().Str("AppInternalHost", cfg.AppInternalHost).Str("AppInternalPort", cfg.AppInternalPort).Msg("App internal config")
+	l.Trace().Str("AppPublicHost", cfg.AppPublicHost).Str("AppPublicPort", cfg.AppPublicPort).Msg("App public config")
 	l.Trace().Str("DBHost", cfg.DBHost).Str("DBPort", cfg.DBPort).Msg("Postgres config")
 	l.Trace().Str("CacheHost", cfg.CacheHost).Str("CachePort", cfg.CachePort).Msg("Redis config")
 	l.Trace().Str("S3Host", cfg.S3Host).Str("S3Port", cfg.S3Port).Msg("Minio config")
@@ -96,8 +103,8 @@ func LoadConfig(l zerolog.Logger) *Config {
 	return cfg
 }
 
-func (c *Config) GetAppAddress() string {
-	return fmt.Sprintf("%s:%s", c.AppHost, c.AppPort)
+func (c *Config) GetAppInternalAddress() string {
+	return fmt.Sprintf("%s:%s", c.AppInternalHost, c.AppInternalPort)
 }
 
 func (c *Config) DBConnString() string {
@@ -113,7 +120,7 @@ func (c *Config) CacheConnString() string {
 func (c *Config) S3ConnConfig() *minio.ConnectConfig {
 	return &minio.ConnectConfig{
 		BackendEndpoint: fmt.Sprintf("%s:%s", c.S3Host, c.S3Port),
-		PublicEndpoint:  fmt.Sprintf("%s:%s", c.S3Host, c.S3Port),
+		PublicEndpoint:  fmt.Sprintf("%s:%s", c.AppPublicHost, c.S3Port),
 		Username:        c.S3User,
 		Password:        c.S3Password,
 		UseSSL:          c.S3UseSSL,

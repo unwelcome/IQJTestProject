@@ -53,7 +53,7 @@ func main() {
 	routes.SetupRoutes(app, container)
 
 	// Запуск приложения
-	if err := app.Listen(cfg.GetAppAddress()); err != nil {
+	if err := app.Listen(cfg.GetAppInternalAddress()); err != nil {
 		logger.Fatal().Err(err).Msg("Failed to start server")
 	}
 }

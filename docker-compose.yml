@@ -17,7 +17,6 @@ services:
       minio:
         condition: service_healthy
     environment:
-      GO_ENV: ${GO_ENV:-production}
       IS_DOCKER: true
     networks:
       - app-network
