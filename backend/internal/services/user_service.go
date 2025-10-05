@@ -9,16 +9,25 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-type UserService struct {
-	userRepository *repositories.UserRepository
+type UserService interface {
+	CreateUser(ctx context.Context, userCreate *entities.UserCreateRequest) (int, error)
+	LoginUser(ctx context.Context, userLogin *entities.UserLoginRequest) (int, error)
+	GetUserByID(ctx context.Context, userID int) (*entities.UserGet, error)
+	GetAllUsers(ctx context.Context) ([]*entities.UserGet, error)
+	UpdateUserPassword(ctx context.Context, userID int, userUpdatePasswordRequest *entities.UserUpdatePasswordRequest) error
+	DeleteUser(ctx context.Context, userID int) error
+}
+
+type userServiceImpl struct {
+	userRepository repositories.UserRepository
 	bcryptCost     int
 }
 
-func NewUserService(userRepository *repositories.UserRepository, bcryptCost int) *UserService {
-	return &UserService{userRepository: userRepository, bcryptCost: bcryptCost}
+func NewUserService(userRepository repositories.UserRepository, bcryptCost int) UserService {
+	return &userServiceImpl{userRepository: userRepository, bcryptCost: bcryptCost}
 }
 
-func (s *UserService) CreateUser(ctx context.Context, userCreate *entities.UserCreateRequest) (int, error) {
+func (s *userServiceImpl) CreateUser(ctx context.Context, userCreate *entities.UserCreateRequest) (int, error) {
 
 	// Переводим пароль из строки в срез байт
 	bytePassword := []byte(userCreate.Password)
@@ -46,7 +55,7 @@ func (s *UserService) CreateUser(ctx context.Context, userCreate *entities.UserC
 	return user.ID, nil
 }
 
-func (s *UserService) LoginUser(ctx context.Context, userLogin *entities.UserLoginRequest) (int, error) {
+func (s *userServiceImpl) LoginUser(ctx context.Context, userLogin *entities.UserLoginRequest) (int, error) {
 
 	// Получаем пользователя с данным логином
 	userWithLogin, err := s.userRepository.GetUserByLogin(ctx, userLogin.Login)
@@ -62,7 +71,7 @@ func (s *UserService) LoginUser(ctx context.Context, userLogin *entities.UserLog
 	return userWithLogin.ID, nil
 }
 
-func (s *UserService) GetUserByID(ctx context.Context, userID int) (*entities.UserGet, error) {
+func (s *userServiceImpl) GetUserByID(ctx context.Context, userID int) (*entities.UserGet, error) {
 
 	// Получаем пользователя по ID
 	user, err := s.userRepository.GetUserByID(ctx, userID)
@@ -73,7 +82,7 @@ func (s *UserService) GetUserByID(ctx context.Context, userID int) (*entities.Us
 	return user, nil
 }
 
-func (s *UserService) GetAllUsers(ctx context.Context) ([]*entities.UserGet, error) {
+func (s *userServiceImpl) GetAllUsers(ctx context.Context) ([]*entities.UserGet, error) {
 
 	// Получаем всех пользователей
 	users, err := s.userRepository.GetAllUsers(ctx)
@@ -84,7 +93,7 @@ func (s *UserService) GetAllUsers(ctx context.Context) ([]*entities.UserGet, err
 	return users, nil
 }
 
-func (s *UserService) UpdateUserPassword(ctx context.Context, userID int, userUpdatePasswordRequest *entities.UserUpdatePasswordRequest) error {
+func (s *userServiceImpl) UpdateUserPassword(ctx context.Context, userID int, userUpdatePasswordRequest *entities.UserUpdatePasswordRequest) error {
 
 	// Хешируем новый пароль
 	passwordHash, err := bcrypt.GenerateFromPassword([]byte(userUpdatePasswordRequest.Password), s.bcryptCost)
@@ -101,7 +110,7 @@ func (s *UserService) UpdateUserPassword(ctx context.Context, userID int, userUp
 	return nil
 }
 
-func (s *UserService) DeleteUser(ctx context.Context, userID int) error {
+func (s *userServiceImpl) DeleteUser(ctx context.Context, userID int) error {
 
 	// Удаляем пользователя
 	err := s.userRepository.DeleteUser(ctx, userID)

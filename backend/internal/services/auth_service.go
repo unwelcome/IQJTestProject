@@ -10,9 +10,17 @@ import (
 	"github.com/unwelcome/iqjtest/internal/repositories"
 )
 
-type AuthService struct {
-	userService     *UserService
-	tokenRepository *repositories.AuthRepository
+type AuthService interface {
+	RegistrationUser(ctx context.Context, userCreate *entities.UserCreateRequest) (*entities.AuthResponse, error)
+	LoginUser(ctx context.Context, userLogin *entities.UserLoginRequest) (*entities.AuthResponse, error)
+	RefreshToken(ctx context.Context, refreshToken string) (*entities.TokenPair, error)
+	DeleteRefreshToken(ctx context.Context, userID int, refreshToken string) error
+	DeleteUser(ctx context.Context, userID int) error
+}
+
+type authServiceImpl struct {
+	userService     UserService
+	tokenRepository repositories.AuthRepository
 
 	secretKey            string
 	accessTokenLifetime  time.Duration
@@ -21,8 +29,14 @@ type AuthService struct {
 	tokenID int
 }
 
-func NewAuthService(userService *UserService, tokenRepository *repositories.AuthRepository, secretKey string, accessTokenLifetime time.Duration, refreshTokenLifetime time.Duration) *AuthService {
-	return &AuthService{
+func NewAuthService(
+	userService UserService,
+	tokenRepository repositories.AuthRepository,
+	secretKey string,
+	accessTokenLifetime time.Duration,
+	refreshTokenLifetime time.Duration,
+) AuthService {
+	return &authServiceImpl{
 		userService:     userService,
 		tokenRepository: tokenRepository,
 
@@ -34,7 +48,7 @@ func NewAuthService(userService *UserService, tokenRepository *repositories.Auth
 	}
 }
 
-func (s *AuthService) RegistrationUser(ctx context.Context, userCreate *entities.UserCreateRequest) (*entities.AuthResponse, error) {
+func (s *authServiceImpl) RegistrationUser(ctx context.Context, userCreate *entities.UserCreateRequest) (*entities.AuthResponse, error) {
 
 	// Создаем пользователя
 	userID, err := s.userService.CreateUser(ctx, userCreate)
@@ -54,7 +68,7 @@ func (s *AuthService) RegistrationUser(ctx context.Context, userCreate *entities
 	return &entities.AuthResponse{TokenPair: tokenPair, UserID: userID}, nil
 }
 
-func (s *AuthService) LoginUser(ctx context.Context, userLogin *entities.UserLoginRequest) (*entities.AuthResponse, error) {
+func (s *authServiceImpl) LoginUser(ctx context.Context, userLogin *entities.UserLoginRequest) (*entities.AuthResponse, error) {
 
 	// Проверяем, есть ли пользователь с таким логином в системе и получаем его ID
 	userID, err := s.userService.LoginUser(ctx, userLogin)
@@ -74,7 +88,7 @@ func (s *AuthService) LoginUser(ctx context.Context, userLogin *entities.UserLog
 	return &entities.AuthResponse{TokenPair: tokenPair, UserID: userID}, nil
 }
 
-func (s *AuthService) RefreshToken(ctx context.Context, refreshToken string) (*entities.TokenPair, error) {
+func (s *authServiceImpl) RefreshToken(ctx context.Context, refreshToken string) (*entities.TokenPair, error) {
 
 	// Парсим refresh токен
 	tokenClaims, err := utils.ParseToken(refreshToken, s.secretKey)
@@ -102,7 +116,7 @@ func (s *AuthService) RefreshToken(ctx context.Context, refreshToken string) (*e
 	return tokenPair, nil
 }
 
-func (s *AuthService) DeleteRefreshToken(ctx context.Context, userID int, refreshToken string) error {
+func (s *authServiceImpl) DeleteRefreshToken(ctx context.Context, userID int, refreshToken string) error {
 
 	// Удаляем токен
 	err := s.tokenRepository.DeleteToken(ctx, userID, refreshToken, entities.RefreshTokenType)
@@ -113,7 +127,7 @@ func (s *AuthService) DeleteRefreshToken(ctx context.Context, userID int, refres
 	return nil
 }
 
-func (s *AuthService) DeleteUser(ctx context.Context, userID int) error {
+func (s *authServiceImpl) DeleteUser(ctx context.Context, userID int) error {
 
 	// Удаляем пользователя из бд
 	err := s.userService.DeleteUser(ctx, userID)

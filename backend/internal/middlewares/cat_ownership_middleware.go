@@ -9,7 +9,7 @@ import (
 	"github.com/unwelcome/iqjtest/internal/services"
 )
 
-func CatOwnershipMiddleware(catService *services.CatService, middlewareRequestTimeout time.Duration) fiber.Handler {
+func CatOwnershipMiddleware(catService services.CatService, middlewareRequestTimeout time.Duration) fiber.Handler {
 	return func(c *fiber.Ctx) error {
 
 		// Ограничение времени выполнения

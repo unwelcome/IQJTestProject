@@ -10,15 +10,23 @@ import (
 	"github.com/unwelcome/iqjtest/internal/entities"
 )
 
-type AuthRepository struct {
+type AuthRepository interface {
+	AddToken(ctx context.Context, userID int, token string, tokenType string, expiresIn time.Duration) error
+	CheckExistsToken(ctx context.Context, userID int, token string, tokenType string) error
+	ReplaceToken(ctx context.Context, userID int, oldToken, newToken, tokenType string, expiresIn time.Duration) error
+	DeleteToken(ctx context.Context, userID int, token string, tokenType string) error
+	DeleteAllTokens(ctx context.Context, userID int) error
+}
+
+type authRepositoryImpl struct {
 	redis *redis.Client
 }
 
-func NewAuthRepository(redis *redis.Client) *AuthRepository {
-	return &AuthRepository{redis: redis}
+func NewAuthRepository(redis *redis.Client) AuthRepository {
+	return &authRepositoryImpl{redis: redis}
 }
 
-func (r *AuthRepository) AddToken(ctx context.Context, userID int, token string, tokenType string, expiresIn time.Duration) error {
+func (r *authRepositoryImpl) AddToken(ctx context.Context, userID int, token string, tokenType string, expiresIn time.Duration) error {
 	key := utils.GetTokenKey(userID, tokenType)
 
 	// Добавляем токен в сет
@@ -36,7 +44,7 @@ func (r *AuthRepository) AddToken(ctx context.Context, userID int, token string,
 	return nil
 }
 
-func (r *AuthRepository) CheckExistsToken(ctx context.Context, userID int, token string, tokenType string) error {
+func (r *authRepositoryImpl) CheckExistsToken(ctx context.Context, userID int, token string, tokenType string) error {
 	key := utils.GetTokenKey(userID, tokenType)
 
 	exists, err := r.redis.SIsMember(ctx, key, token).Result()
@@ -50,7 +58,7 @@ func (r *AuthRepository) CheckExistsToken(ctx context.Context, userID int, token
 	return nil
 }
 
-func (r *AuthRepository) ReplaceToken(ctx context.Context, userID int, oldToken, newToken, tokenType string, expiresIn time.Duration) error {
+func (r *authRepositoryImpl) ReplaceToken(ctx context.Context, userID int, oldToken, newToken, tokenType string, expiresIn time.Duration) error {
 	key := utils.GetTokenKey(userID, tokenType)
 
 	// Проверяем наличие старого токена
@@ -80,7 +88,7 @@ func (r *AuthRepository) ReplaceToken(ctx context.Context, userID int, oldToken,
 	return nil
 }
 
-func (r *AuthRepository) DeleteToken(ctx context.Context, userID int, token string, tokenType string) error {
+func (r *authRepositoryImpl) DeleteToken(ctx context.Context, userID int, token string, tokenType string) error {
 	key := utils.GetTokenKey(userID, tokenType)
 
 	value, err := r.redis.SRem(ctx, key, token).Result()
@@ -93,7 +101,7 @@ func (r *AuthRepository) DeleteToken(ctx context.Context, userID int, token stri
 	return nil
 }
 
-func (r *AuthRepository) DeleteAllTokens(ctx context.Context, userID int) error {
+func (r *authRepositoryImpl) DeleteAllTokens(ctx context.Context, userID int) error {
 	// Удаляем все access токены
 	key := utils.GetTokenKey(userID, entities.AccessTokenType)
 	err := r.redis.Del(ctx, key).Err()

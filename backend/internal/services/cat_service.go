@@ -7,16 +7,28 @@ import (
 	"github.com/unwelcome/iqjtest/internal/repositories"
 )
 
-type CatService struct {
-	catRepository   *repositories.CatRepository
-	catPhotoService *CatPhotoService
+type CatService interface {
+	CreateCat(ctx context.Context, userID int, catCreateRequest *entities.CatCreateRequestWithPhotos) (*entities.CatCreateResponse, error)
+	GetCatByID(ctx context.Context, catID int) (*entities.CatWithPhotos, error)
+	GetAllCats(ctx context.Context) ([]*entities.CatWithPrimePhoto, error)
+	CheckOwnershipRight(ctx context.Context, userID, catID int) (bool, error)
+	UpdateCatName(ctx context.Context, catID int, catUpdateNameRequest *entities.CatUpdateNameRequest) (*entities.CatUpdateNameResponse, error)
+	UpdateCatAge(ctx context.Context, catID int, catUpdateAgeRequest *entities.CatUpdateAgeRequest) (*entities.CatUpdateAgeResponse, error)
+	UpdateCatDescription(ctx context.Context, catID int, catUpdateDescriptionRequest *entities.CatUpdateDescriptionRequest) (*entities.CatUpdateDescriptionResponse, error)
+	UpdateCat(ctx context.Context, catID int, catUpdateRequest *entities.CatUpdateRequest) (*entities.CatUpdateResponse, error)
+	DeleteCat(ctx context.Context, catID int) error
 }
 
-func NewCatService(catRepository *repositories.CatRepository, catPhotoService *CatPhotoService) *CatService {
-	return &CatService{catRepository: catRepository, catPhotoService: catPhotoService}
+type catServiceImpl struct {
+	catRepository   repositories.CatRepository
+	catPhotoService CatPhotoService
 }
 
-func (s *CatService) CreateCat(ctx context.Context, userID int, catCreateRequest *entities.CatCreateRequestWithPhotos) (*entities.CatCreateResponse, error) {
+func NewCatService(catRepository repositories.CatRepository, catPhotoService CatPhotoService) CatService {
+	return &catServiceImpl{catRepository: catRepository, catPhotoService: catPhotoService}
+}
+
+func (s *catServiceImpl) CreateCat(ctx context.Context, userID int, catCreateRequest *entities.CatCreateRequestWithPhotos) (*entities.CatCreateResponse, error) {
 	// Создаем кота
 	cat := &entities.Cat{
 		Name:        catCreateRequest.Fields.Name,
@@ -36,7 +48,7 @@ func (s *CatService) CreateCat(ctx context.Context, userID int, catCreateRequest
 	return &entities.CatCreateResponse{ID: cat.ID, Photo: catPhotoUploadResponse}, nil
 }
 
-func (s *CatService) GetCatByID(ctx context.Context, catID int) (*entities.CatWithPhotos, error) {
+func (s *catServiceImpl) GetCatByID(ctx context.Context, catID int) (*entities.CatWithPhotos, error) {
 	// Получаем данные кота
 	cat, err := s.catRepository.GetCatByID(ctx, catID)
 	if err != nil {
@@ -63,7 +75,7 @@ func (s *CatService) GetCatByID(ctx context.Context, catID int) (*entities.CatWi
 	return catWithPhotos, nil
 }
 
-func (s *CatService) GetAllCats(ctx context.Context) ([]*entities.CatWithPrimePhoto, error) {
+func (s *catServiceImpl) GetAllCats(ctx context.Context) ([]*entities.CatWithPrimePhoto, error) {
 
 	// Получаем всех котов
 	cats, err := s.catRepository.GetAllCats(ctx)
@@ -74,7 +86,7 @@ func (s *CatService) GetAllCats(ctx context.Context) ([]*entities.CatWithPrimePh
 	return cats, nil
 }
 
-func (s *CatService) CheckOwnershipRight(ctx context.Context, userID, catID int) (bool, error) {
+func (s *catServiceImpl) CheckOwnershipRight(ctx context.Context, userID, catID int) (bool, error) {
 
 	// Получаем кота по ID
 	cat, err := s.catRepository.GetCatByID(ctx, catID)
@@ -86,7 +98,7 @@ func (s *CatService) CheckOwnershipRight(ctx context.Context, userID, catID int)
 	return cat.CreatedBy == userID, nil
 }
 
-func (s *CatService) UpdateCatName(ctx context.Context, catID int, catUpdateNameRequest *entities.CatUpdateNameRequest) (*entities.CatUpdateNameResponse, error) {
+func (s *catServiceImpl) UpdateCatName(ctx context.Context, catID int, catUpdateNameRequest *entities.CatUpdateNameRequest) (*entities.CatUpdateNameResponse, error) {
 
 	// Обновляем кличку кота
 	err := s.catRepository.UpdateCatName(ctx, catID, catUpdateNameRequest.Name)
@@ -97,7 +109,7 @@ func (s *CatService) UpdateCatName(ctx context.Context, catID int, catUpdateName
 	return &entities.CatUpdateNameResponse{ID: catID}, nil
 }
 
-func (s *CatService) UpdateCatAge(ctx context.Context, catID int, catUpdateAgeRequest *entities.CatUpdateAgeRequest) (*entities.CatUpdateAgeResponse, error) {
+func (s *catServiceImpl) UpdateCatAge(ctx context.Context, catID int, catUpdateAgeRequest *entities.CatUpdateAgeRequest) (*entities.CatUpdateAgeResponse, error) {
 
 	// Обновляем возраст кота
 	err := s.catRepository.UpdateCatAge(ctx, catID, catUpdateAgeRequest.Age)
@@ -108,7 +120,7 @@ func (s *CatService) UpdateCatAge(ctx context.Context, catID int, catUpdateAgeRe
 	return &entities.CatUpdateAgeResponse{ID: catID}, nil
 }
 
-func (s *CatService) UpdateCatDescription(ctx context.Context, catID int, catUpdateDescriptionRequest *entities.CatUpdateDescriptionRequest) (*entities.CatUpdateDescriptionResponse, error) {
+func (s *catServiceImpl) UpdateCatDescription(ctx context.Context, catID int, catUpdateDescriptionRequest *entities.CatUpdateDescriptionRequest) (*entities.CatUpdateDescriptionResponse, error) {
 
 	// Обновляем описание кота
 	err := s.catRepository.UpdateCatDescription(ctx, catID, catUpdateDescriptionRequest.Description)
@@ -119,7 +131,7 @@ func (s *CatService) UpdateCatDescription(ctx context.Context, catID int, catUpd
 	return &entities.CatUpdateDescriptionResponse{ID: catID}, nil
 }
 
-func (s *CatService) UpdateCat(ctx context.Context, catID int, catUpdateRequest *entities.CatUpdateRequest) (*entities.CatUpdateResponse, error) {
+func (s *catServiceImpl) UpdateCat(ctx context.Context, catID int, catUpdateRequest *entities.CatUpdateRequest) (*entities.CatUpdateResponse, error) {
 
 	// Обновляем все поля кота
 	err := s.catRepository.UpdateCat(ctx, catID, catUpdateRequest)
@@ -135,7 +147,7 @@ func (s *CatService) UpdateCat(ctx context.Context, catID int, catUpdateRequest 
 	}, nil
 }
 
-func (s *CatService) DeleteCat(ctx context.Context, catID int) error {
+func (s *catServiceImpl) DeleteCat(ctx context.Context, catID int) error {
 
 	// Удаляем все фото кота
 	err := s.catPhotoService.DeleteAllCatPhotos(ctx, catID)

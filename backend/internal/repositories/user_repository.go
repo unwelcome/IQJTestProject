@@ -8,15 +8,24 @@ import (
 	"github.com/unwelcome/iqjtest/internal/entities"
 )
 
-type UserRepository struct {
+type UserRepository interface {
+	CreateUser(ctx context.Context, user *entities.User) error
+	GetUserByID(ctx context.Context, id int) (*entities.UserGet, error)
+	GetUserByLogin(ctx context.Context, login string) (*entities.User, error)
+	GetAllUsers(ctx context.Context) ([]*entities.UserGet, error)
+	UpdateUserPassword(ctx context.Context, id int, passwordHash string) error
+	DeleteUser(ctx context.Context, id int) error
+}
+
+type userRepositoryImpl struct {
 	db *sql.DB
 }
 
-func NewUserRepository(db *sql.DB) *UserRepository {
-	return &UserRepository{db: db}
+func NewUserRepository(db *sql.DB) UserRepository {
+	return &userRepositoryImpl{db: db}
 }
 
-func (r *UserRepository) CreateUser(ctx context.Context, user *entities.User) error {
+func (r *userRepositoryImpl) CreateUser(ctx context.Context, user *entities.User) error {
 	query := `INSERT INTO users(login, password_hash) VALUES ($1, $2) RETURNING id`
 
 	err := r.db.QueryRowContext(ctx, query, user.Login, user.PasswordHash).Scan(&user.ID)
@@ -27,7 +36,7 @@ func (r *UserRepository) CreateUser(ctx context.Context, user *entities.User) er
 	return nil
 }
 
-func (r *UserRepository) GetUserByID(ctx context.Context, id int) (*entities.UserGet, error) {
+func (r *userRepositoryImpl) GetUserByID(ctx context.Context, id int) (*entities.UserGet, error) {
 	query := `SELECT login, created_at FROM users WHERE id = $1`
 
 	// Получаем пользователя по ID
@@ -43,7 +52,7 @@ func (r *UserRepository) GetUserByID(ctx context.Context, id int) (*entities.Use
 	return user, nil
 }
 
-func (r *UserRepository) GetUserByLogin(ctx context.Context, login string) (*entities.User, error) {
+func (r *userRepositoryImpl) GetUserByLogin(ctx context.Context, login string) (*entities.User, error) {
 	query := `SELECT id, password_hash FROM users WHERE login = $1`
 
 	// Получаем пользователя по login
@@ -59,7 +68,7 @@ func (r *UserRepository) GetUserByLogin(ctx context.Context, login string) (*ent
 	return user, nil
 }
 
-func (r *UserRepository) GetAllUsers(ctx context.Context) ([]*entities.UserGet, error) {
+func (r *userRepositoryImpl) GetAllUsers(ctx context.Context) ([]*entities.UserGet, error) {
 	query := `SELECT id, login, created_at FROM users`
 
 	// Получаем всех пользователей
@@ -86,7 +95,7 @@ func (r *UserRepository) GetAllUsers(ctx context.Context) ([]*entities.UserGet, 
 	return users, nil
 }
 
-func (r *UserRepository) UpdateUserPassword(ctx context.Context, id int, passwordHash string) error {
+func (r *userRepositoryImpl) UpdateUserPassword(ctx context.Context, id int, passwordHash string) error {
 	query := `UPDATE users SET password_hash = $1 WHERE id = $2`
 
 	// Обновляем пароль пользователя
@@ -98,7 +107,7 @@ func (r *UserRepository) UpdateUserPassword(ctx context.Context, id int, passwor
 	return nil
 }
 
-func (r *UserRepository) DeleteUser(ctx context.Context, id int) error {
+func (r *userRepositoryImpl) DeleteUser(ctx context.Context, id int) error {
 	query := `DELETE FROM users WHERE id = $1`
 
 	// Удаляем пользователя

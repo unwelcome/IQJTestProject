@@ -10,7 +10,7 @@ import (
 func ValidateIntParams(c *fiber.Ctx, key string, minValue, maxValue int) (int, error) {
 
 	// Парсим параметр
-	param, err := c.ParamsInt("id")
+	param, err := c.ParamsInt(key)
 	if err != nil {
 		return 0, fmt.Errorf("missing %s", key)
 	}

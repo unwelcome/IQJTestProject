@@ -6,15 +6,26 @@ import (
 	"github.com/unwelcome/iqjtest/internal/entities"
 )
 
-type CatRepository struct {
+type CatRepository interface {
+	CreateCat(ctx context.Context, userID int, cat *entities.Cat) error
+	GetCatByID(ctx context.Context, catID int) (*entities.Cat, error)
+	GetAllCats(ctx context.Context) ([]*entities.CatWithPrimePhoto, error)
+	UpdateCatName(ctx context.Context, catID int, newName string) error
+	UpdateCatAge(ctx context.Context, catID int, newAge int) error
+	UpdateCatDescription(ctx context.Context, catID int, newDescription string) error
+	UpdateCat(ctx context.Context, catID int, catUpdateRequest *entities.CatUpdateRequest) error
+	DeleteCat(ctx context.Context, catID int) error
+}
+
+type catRepositoryImpl struct {
 	db *sql.DB
 }
 
-func NewCatRepository(db *sql.DB) *CatRepository {
-	return &CatRepository{db: db}
+func NewCatRepository(db *sql.DB) CatRepository {
+	return &catRepositoryImpl{db: db}
 }
 
-func (r *CatRepository) CreateCat(ctx context.Context, userID int, cat *entities.Cat) error {
+func (r *catRepositoryImpl) CreateCat(ctx context.Context, userID int, cat *entities.Cat) error {
 	query := `INSERT INTO cats(name, age, description, created_by) VALUES ($1, $2, $3, $4) RETURNING id;`
 
 	err := r.db.QueryRowContext(ctx, query, cat.Name, cat.Age, cat.Description, userID).Scan(&cat.ID)
@@ -25,7 +36,7 @@ func (r *CatRepository) CreateCat(ctx context.Context, userID int, cat *entities
 	return nil
 }
 
-func (r *CatRepository) GetCatByID(ctx context.Context, catID int) (*entities.Cat, error) {
+func (r *catRepositoryImpl) GetCatByID(ctx context.Context, catID int) (*entities.Cat, error) {
 	// Запрос на получение кота
 	query := `SELECT name, age, description, created_at, created_by FROM cats WHERE id = $1;`
 
@@ -40,7 +51,7 @@ func (r *CatRepository) GetCatByID(ctx context.Context, catID int) (*entities.Ca
 	return cat, nil
 }
 
-func (r *CatRepository) GetAllCats(ctx context.Context) ([]*entities.CatWithPrimePhoto, error) {
+func (r *catRepositoryImpl) GetAllCats(ctx context.Context) ([]*entities.CatWithPrimePhoto, error) {
 	// Запрос на получение всех котов с left join фото котов, сортируя по catID, затем по is_primary и в конце по photoID
 	// Т.о. Получаем кота с первым is_primary фото либо кота с первым фото либо кота без фото
 	query := `
@@ -94,7 +105,7 @@ func (r *CatRepository) GetAllCats(ctx context.Context) ([]*entities.CatWithPrim
 	return cats, nil
 }
 
-func (r *CatRepository) UpdateCatName(ctx context.Context, catID int, newName string) error {
+func (r *catRepositoryImpl) UpdateCatName(ctx context.Context, catID int, newName string) error {
 	query := `UPDATE cats SET name = $1 WHERE id = $2;`
 
 	_, err := r.db.ExecContext(ctx, query, newName, catID)
@@ -105,7 +116,7 @@ func (r *CatRepository) UpdateCatName(ctx context.Context, catID int, newName st
 	return nil
 }
 
-func (r *CatRepository) UpdateCatAge(ctx context.Context, catID int, newAge int) error {
+func (r *catRepositoryImpl) UpdateCatAge(ctx context.Context, catID int, newAge int) error {
 	query := `UPDATE cats SET age = $1 WHERE id = $2;`
 
 	_, err := r.db.ExecContext(ctx, query, newAge, catID)
@@ -116,7 +127,7 @@ func (r *CatRepository) UpdateCatAge(ctx context.Context, catID int, newAge int)
 	return nil
 }
 
-func (r *CatRepository) UpdateCatDescription(ctx context.Context, catID int, newDescription string) error {
+func (r *catRepositoryImpl) UpdateCatDescription(ctx context.Context, catID int, newDescription string) error {
 	query := `UPDATE cats SET description = $1 WHERE id = $2;`
 
 	_, err := r.db.ExecContext(ctx, query, newDescription, catID)
@@ -127,7 +138,7 @@ func (r *CatRepository) UpdateCatDescription(ctx context.Context, catID int, new
 	return nil
 }
 
-func (r *CatRepository) UpdateCat(ctx context.Context, catID int, catUpdateRequest *entities.CatUpdateRequest) error {
+func (r *catRepositoryImpl) UpdateCat(ctx context.Context, catID int, catUpdateRequest *entities.CatUpdateRequest) error {
 	query := `UPDATE cats SET (name, age, description) = ($1, $2, $3) WHERE id = $4;`
 
 	_, err := r.db.ExecContext(ctx, query, catUpdateRequest.Name, catUpdateRequest.Age, catUpdateRequest.Description, catID)
@@ -138,7 +149,7 @@ func (r *CatRepository) UpdateCat(ctx context.Context, catID int, catUpdateReque
 	return nil
 }
 
-func (r *CatRepository) DeleteCat(ctx context.Context, catID int) error {
+func (r *catRepositoryImpl) DeleteCat(ctx context.Context, catID int) error {
 	query := `DELETE FROM cats WHERE id = $1;`
 
 	_, err := r.db.ExecContext(ctx, query, catID)

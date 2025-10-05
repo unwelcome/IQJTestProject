@@ -9,13 +9,21 @@ import (
 	"github.com/unwelcome/iqjtest/internal/services"
 )
 
-type AuthHandler struct {
-	authService    *services.AuthService
+type AuthHandler interface {
+	Register(c *fiber.Ctx) error
+	Login(c *fiber.Ctx) error
+	Refresh(c *fiber.Ctx) error
+	Logout(c *fiber.Ctx) error
+	DeleteUser(c *fiber.Ctx) error
+}
+
+type authHandlerImpl struct {
+	authService    services.AuthService
 	requestTimeout time.Duration
 }
 
-func NewAuthHandler(authService *services.AuthService, requestTimeout time.Duration) *AuthHandler {
-	return &AuthHandler{authService: authService, requestTimeout: requestTimeout}
+func NewAuthHandler(authService services.AuthService, requestTimeout time.Duration) AuthHandler {
+	return &authHandlerImpl{authService: authService, requestTimeout: requestTimeout}
 }
 
 // Register
@@ -29,7 +37,7 @@ func NewAuthHandler(authService *services.AuthService, requestTimeout time.Durat
 // @Failure 400 {object} entities.ErrorResponse
 // @Failure 500 {object} entities.ErrorResponse
 // @Router /register [post]
-func (h *AuthHandler) Register(c *fiber.Ctx) error {
+func (h *authHandlerImpl) Register(c *fiber.Ctx) error {
 
 	// Ограничение времени выполнения
 	ctx, cancel := context.WithTimeout(context.Background(), h.requestTimeout)
@@ -61,7 +69,7 @@ func (h *AuthHandler) Register(c *fiber.Ctx) error {
 // @Failure 400 {object} entities.ErrorResponse
 // @Failure 500 {object} entities.ErrorResponse
 // @Router /login [post]
-func (h *AuthHandler) Login(c *fiber.Ctx) error {
+func (h *authHandlerImpl) Login(c *fiber.Ctx) error {
 
 	// Ограничение времени выполнения
 	ctx, cancel := context.WithTimeout(context.Background(), h.requestTimeout)
@@ -93,7 +101,7 @@ func (h *AuthHandler) Login(c *fiber.Ctx) error {
 // @Failure 400 {object} entities.ErrorResponse
 // @Failure 500 {object} entities.ErrorResponse
 // @Router /refresh [post]
-func (h *AuthHandler) Refresh(c *fiber.Ctx) error {
+func (h *authHandlerImpl) Refresh(c *fiber.Ctx) error {
 
 	// Ограничение времени выполнения
 	ctx, cancel := context.WithTimeout(context.Background(), h.requestTimeout)
@@ -127,7 +135,7 @@ func (h *AuthHandler) Refresh(c *fiber.Ctx) error {
 // @Failure 401 {object} entities.ErrorResponse
 // @Failure 500 {object} entities.ErrorResponse
 // @Router /auth/logout [delete]
-func (h *AuthHandler) Logout(c *fiber.Ctx) error {
+func (h *authHandlerImpl) Logout(c *fiber.Ctx) error {
 
 	// Ограничение времени выполнения
 	ctx, cancel := context.WithTimeout(context.Background(), h.requestTimeout)
@@ -161,7 +169,7 @@ func (h *AuthHandler) Logout(c *fiber.Ctx) error {
 // @Failure 401 {object} entities.ErrorResponse
 // @Failure 500 {object} entities.ErrorResponse
 // @Router /auth/user/delete [delete]
-func (h *AuthHandler) DeleteUser(c *fiber.Ctx) error {
+func (h *authHandlerImpl) DeleteUser(c *fiber.Ctx) error {
 
 	// Ограничение времени выполнения
 	ctx, cancel := context.WithTimeout(context.Background(), h.requestTimeout)

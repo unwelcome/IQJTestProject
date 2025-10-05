@@ -21,27 +21,27 @@ type Container struct {
 	CatOwnershipMiddleware func(c *fiber.Ctx) error
 
 	// Health
-	HealthHandler *handlers.HealthHandler
+	HealthHandler handlers.HealthHandler
 
 	// Auth
-	authRepository *repositories.AuthRepository
-	authService    *services.AuthService
-	AuthHandler    *handlers.AuthHandler
+	authRepository repositories.AuthRepository
+	authService    services.AuthService
+	AuthHandler    handlers.AuthHandler
 
 	// User
-	userRepository *repositories.UserRepository
-	userService    *services.UserService
-	UserHandler    *handlers.UserHandler
+	userRepository repositories.UserRepository
+	userService    services.UserService
+	UserHandler    handlers.UserHandler
 
 	// Cat
-	catRepository *repositories.CatRepository
-	catService    *services.CatService
-	CatHandler    *handlers.CatHandler
+	catRepository repositories.CatRepository
+	catService    services.CatService
+	CatHandler    handlers.CatHandler
 
 	// CatPhoto
-	catPhotoRepository *repositories.CatPhotoRepository
-	catPhotoService    *services.CatPhotoService
-	CatPhotoHandler    *handlers.CatPhotoHandler
+	catPhotoRepository repositories.CatPhotoRepository
+	catPhotoService    services.CatPhotoService
+	CatPhotoHandler    handlers.CatPhotoHandler
 }
 
 func NewContainer(postgres *sql.DB, redis *redis.Client, minio *minio.Client, cfg *config.Config, logger zerolog.Logger) *Container {

@@ -9,15 +9,24 @@ import (
 	"github.com/unwelcome/iqjtest/pkg/utils"
 )
 
-type CatPhotoRepository struct {
+type CatPhotoRepository interface {
+	AddCatPhoto(ctx context.Context, catID int, req *entities.CatPhotoUploadRequest) (*entities.CatPhotoUploadSuccess, error)
+	GetAllCatPhotos(ctx context.Context, catID int) ([]*entities.CatPhotoUrl, error)
+	GetCatPhotoByID(ctx context.Context, photoID int) (*entities.CatPhoto, error)
+	SetCatPhotoPrimary(ctx context.Context, catID, photoID int) error
+	DeleteCatPhoto(ctx context.Context, photoID int) error
+	DeleteAllCatPhotos(ctx context.Context, catID int) error
+}
+
+type catPhotoRepositoryImpl struct {
 	db          *sql.DB
 	minioClient *minio.Client
 	endpoint    string
 	bucketName  string
 }
 
-func NewCatPhotoRepository(db *sql.DB, minioClient *minio.Client, endpoint, bucketName string) *CatPhotoRepository {
-	return &CatPhotoRepository{
+func NewCatPhotoRepository(db *sql.DB, minioClient *minio.Client, endpoint, bucketName string) CatPhotoRepository {
+	return &catPhotoRepositoryImpl{
 		db:          db,
 		minioClient: minioClient,
 		endpoint:    endpoint,
@@ -25,7 +34,7 @@ func NewCatPhotoRepository(db *sql.DB, minioClient *minio.Client, endpoint, buck
 	}
 }
 
-func (r *CatPhotoRepository) AddCatPhoto(ctx context.Context, catID int, req *entities.CatPhotoUploadRequest) (*entities.CatPhotoUploadSuccess, error) {
+func (r *catPhotoRepositoryImpl) AddCatPhoto(ctx context.Context, catID int, req *entities.CatPhotoUploadRequest) (*entities.CatPhotoUploadSuccess, error) {
 	// Генерируем уникальное имя файла
 	filename := utils.GenerateFilename(req.FileName, catID, "cat")
 
@@ -59,7 +68,7 @@ func (r *CatPhotoRepository) AddCatPhoto(ctx context.Context, catID int, req *en
 	return res, nil
 }
 
-func (r *CatPhotoRepository) GetAllCatPhotos(ctx context.Context, catID int) ([]*entities.CatPhotoUrl, error) {
+func (r *catPhotoRepositoryImpl) GetAllCatPhotos(ctx context.Context, catID int) ([]*entities.CatPhotoUrl, error) {
 	query := `SELECT id, url, is_primary FROM cat_photos WHERE cat_id = $1 ORDER BY is_primary DESC, id ASC;`
 
 	// Выполняем запрос в бд
@@ -84,7 +93,7 @@ func (r *CatPhotoRepository) GetAllCatPhotos(ctx context.Context, catID int) ([]
 	return catPhotos, nil
 }
 
-func (r *CatPhotoRepository) GetCatPhotoByID(ctx context.Context, photoID int) (*entities.CatPhoto, error) {
+func (r *catPhotoRepositoryImpl) GetCatPhotoByID(ctx context.Context, photoID int) (*entities.CatPhoto, error) {
 	query := `SELECT url, cat_id, filename, filesize, mime_type, is_primary, created_at FROM cat_photos WHERE id = $1;`
 
 	catPhoto := &entities.CatPhoto{ID: photoID}
@@ -96,7 +105,7 @@ func (r *CatPhotoRepository) GetCatPhotoByID(ctx context.Context, photoID int) (
 	return catPhoto, nil
 }
 
-func (r *CatPhotoRepository) SetCatPhotoPrimary(ctx context.Context, catID, photoID int) error {
+func (r *catPhotoRepositoryImpl) SetCatPhotoPrimary(ctx context.Context, catID, photoID int) error {
 	// Создаем транзакцию
 	tx, err := r.db.BeginTx(ctx, nil)
 	if err != nil {
@@ -135,7 +144,7 @@ func (r *CatPhotoRepository) SetCatPhotoPrimary(ctx context.Context, catID, phot
 	return nil
 }
 
-func (r *CatPhotoRepository) DeleteCatPhoto(ctx context.Context, photoID int) error {
+func (r *catPhotoRepositoryImpl) DeleteCatPhoto(ctx context.Context, photoID int) error {
 	// Удаляем файл из бд и получаем filename
 	var filename string
 	query := `DELETE FROM cat_photos WHERE id = $1 RETURNING filename;`
@@ -153,7 +162,7 @@ func (r *CatPhotoRepository) DeleteCatPhoto(ctx context.Context, photoID int) er
 	return nil
 }
 
-func (r *CatPhotoRepository) DeleteAllCatPhotos(ctx context.Context, catID int) error {
+func (r *catPhotoRepositoryImpl) DeleteAllCatPhotos(ctx context.Context, catID int) error {
 	prefix := fmt.Sprintf("cat/%d/", catID)
 
 	// Создаем канал для записи объектов

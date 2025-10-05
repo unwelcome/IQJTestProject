@@ -10,14 +10,25 @@ import (
 	"github.com/unwelcome/iqjtest/internal/services"
 )
 
-type CatHandler struct {
-	catService         *services.CatService
+type CatHandler interface {
+	CreateCat(c *fiber.Ctx) error
+	GetCatByID(c *fiber.Ctx) error
+	GetAllCats(c *fiber.Ctx) error
+	UpdateCatName(c *fiber.Ctx) error
+	UpdateCatAge(c *fiber.Ctx) error
+	UpdateCatDescription(c *fiber.Ctx) error
+	UpdateCat(c *fiber.Ctx) error
+	DeleteCat(c *fiber.Ctx) error
+}
+
+type catHandlerImpl struct {
+	catService         services.CatService
 	requestTimeout     time.Duration
 	fileRequestTimeout time.Duration
 }
 
-func NewCatHandler(catService *services.CatService, requestTimeout, fileRequestTimeout time.Duration) *CatHandler {
-	return &CatHandler{catService: catService, requestTimeout: requestTimeout, fileRequestTimeout: fileRequestTimeout}
+func NewCatHandler(catService services.CatService, requestTimeout, fileRequestTimeout time.Duration) CatHandler {
+	return &catHandlerImpl{catService: catService, requestTimeout: requestTimeout, fileRequestTimeout: fileRequestTimeout}
 }
 
 // CreateCat
@@ -36,7 +47,7 @@ func NewCatHandler(catService *services.CatService, requestTimeout, fileRequestT
 // @Failure 401 {object} entities.ErrorResponse
 // @Failure 500 {object} entities.ErrorResponse
 // @Router /auth/cat/create [post]
-func (h *CatHandler) CreateCat(c *fiber.Ctx) error {
+func (h *catHandlerImpl) CreateCat(c *fiber.Ctx) error {
 
 	// Ограничение времени выполнения
 	ctx, cancel := context.WithTimeout(context.Background(), h.fileRequestTimeout)
@@ -84,7 +95,7 @@ func (h *CatHandler) CreateCat(c *fiber.Ctx) error {
 // @Failure 401 {object} entities.ErrorResponse
 // @Failure 500 {object} entities.ErrorResponse
 // @Router /auth/cat/id/{id} [get]
-func (h *CatHandler) GetCatByID(c *fiber.Ctx) error {
+func (h *catHandlerImpl) GetCatByID(c *fiber.Ctx) error {
 
 	// Ограничение времени выполнения
 	ctx, cancel := context.WithTimeout(context.Background(), h.requestTimeout)
@@ -116,7 +127,7 @@ func (h *CatHandler) GetCatByID(c *fiber.Ctx) error {
 // @Failure 401 {object} entities.ErrorResponse
 // @Failure 500 {object} entities.ErrorResponse
 // @Router /auth/cat/all [get]
-func (h *CatHandler) GetAllCats(c *fiber.Ctx) error {
+func (h *catHandlerImpl) GetAllCats(c *fiber.Ctx) error {
 
 	// Ограничение времени выполнения
 	ctx, cancel := context.WithTimeout(context.Background(), h.requestTimeout)
@@ -129,6 +140,43 @@ func (h *CatHandler) GetAllCats(c *fiber.Ctx) error {
 	}
 
 	return c.Status(fiber.StatusOK).JSON(cats)
+}
+
+// UpdateCat
+// @Summary Обновление клички, возраста и описания кота
+// @Description Обновление клички, возраста и описания кота
+// @Tags cat
+// @Accept json
+// @Produce json
+// @Security ApiKeyAuth
+// @Param id path int true "Cat ID"
+// @Param cat body entities.CatUpdateRequest true "Данные кота"
+// @Success 200 {object} entities.CatUpdateResponse
+// @Failure 400 {object} entities.ErrorResponse
+// @Failure 401 {object} entities.ErrorResponse
+// @Failure 500 {object} entities.ErrorResponse
+// @Router /auth/cat/mw/{id} [put]
+func (h *catHandlerImpl) UpdateCat(c *fiber.Ctx) error {
+
+	// Ограничение времени выполнения
+	ctx, cancel := context.WithTimeout(context.Background(), h.requestTimeout)
+	defer cancel()
+
+	// Парсим тело запроса в структуру
+	catUpdateRequest := &entities.CatUpdateRequest{}
+	if err := c.BodyParser(&catUpdateRequest); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": err.Error()})
+	}
+
+	catID := c.Locals("catID").(int)
+
+	// Обновляем все данные кота
+	catUpdateResponse, err := h.catService.UpdateCat(ctx, catID, catUpdateRequest)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
+	}
+
+	return c.Status(fiber.StatusOK).JSON(catUpdateResponse)
 }
 
 // UpdateCatName
@@ -145,7 +193,7 @@ func (h *CatHandler) GetAllCats(c *fiber.Ctx) error {
 // @Failure 401 {object} entities.ErrorResponse
 // @Failure 500 {object} entities.ErrorResponse
 // @Router /auth/cat/mw/{id}/name [patch]
-func (h *CatHandler) UpdateCatName(c *fiber.Ctx) error {
+func (h *catHandlerImpl) UpdateCatName(c *fiber.Ctx) error {
 
 	// Ограничение времени выполнения
 	ctx, cancel := context.WithTimeout(context.Background(), h.requestTimeout)
@@ -182,7 +230,7 @@ func (h *CatHandler) UpdateCatName(c *fiber.Ctx) error {
 // @Failure 401 {object} entities.ErrorResponse
 // @Failure 500 {object} entities.ErrorResponse
 // @Router /auth/cat/mw/{id}/age [patch]
-func (h *CatHandler) UpdateCatAge(c *fiber.Ctx) error {
+func (h *catHandlerImpl) UpdateCatAge(c *fiber.Ctx) error {
 
 	// Ограничение времени выполнения
 	ctx, cancel := context.WithTimeout(context.Background(), h.requestTimeout)
@@ -219,7 +267,7 @@ func (h *CatHandler) UpdateCatAge(c *fiber.Ctx) error {
 // @Failure 401 {object} entities.ErrorResponse
 // @Failure 500 {object} entities.ErrorResponse
 // @Router /auth/cat/mw/{id}/description [patch]
-func (h *CatHandler) UpdateCatDescription(c *fiber.Ctx) error {
+func (h *catHandlerImpl) UpdateCatDescription(c *fiber.Ctx) error {
 
 	// Ограничение времени выполнения
 	ctx, cancel := context.WithTimeout(context.Background(), h.requestTimeout)
@@ -242,43 +290,6 @@ func (h *CatHandler) UpdateCatDescription(c *fiber.Ctx) error {
 	return c.Status(fiber.StatusOK).JSON(catUpdateDescriptionResponse)
 }
 
-// UpdateCat
-// @Summary Обновление клички, возраста и описания кота
-// @Description Обновление клички, возраста и описания кота
-// @Tags cat
-// @Accept json
-// @Produce json
-// @Security ApiKeyAuth
-// @Param id path int true "Cat ID"
-// @Param cat body entities.CatUpdateRequest true "Данные кота"
-// @Success 200 {object} entities.CatUpdateResponse
-// @Failure 400 {object} entities.ErrorResponse
-// @Failure 401 {object} entities.ErrorResponse
-// @Failure 500 {object} entities.ErrorResponse
-// @Router /auth/cat/mw/{id} [put]
-func (h *CatHandler) UpdateCat(c *fiber.Ctx) error {
-
-	// Ограничение времени выполнения
-	ctx, cancel := context.WithTimeout(context.Background(), h.requestTimeout)
-	defer cancel()
-
-	// Парсим тело запроса в структуру
-	catUpdateRequest := &entities.CatUpdateRequest{}
-	if err := c.BodyParser(&catUpdateRequest); err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": err.Error()})
-	}
-
-	catID := c.Locals("catID").(int)
-
-	// Обновляем все данные кота
-	catUpdateResponse, err := h.catService.UpdateCat(ctx, catID, catUpdateRequest)
-	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
-	}
-
-	return c.Status(fiber.StatusOK).JSON(catUpdateResponse)
-}
-
 // DeleteCat
 // @Summary Удаление кота
 // @Description Удаление кота
@@ -291,7 +302,7 @@ func (h *CatHandler) UpdateCat(c *fiber.Ctx) error {
 // @Failure 401 {object} entities.ErrorResponse
 // @Failure 500 {object} entities.ErrorResponse
 // @Router /auth/cat/mw/{id} [delete]
-func (h *CatHandler) DeleteCat(c *fiber.Ctx) error {
+func (h *catHandlerImpl) DeleteCat(c *fiber.Ctx) error {
 
 	// Ограничение времени выполнения
 	ctx, cancel := context.WithTimeout(context.Background(), h.requestTimeout)

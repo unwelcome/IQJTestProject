@@ -8,14 +8,21 @@ import (
 	"time"
 )
 
-type CatPhotoHandler struct {
-	catPhotoService    *services.CatPhotoService
+type CatPhotoHandler interface {
+	AddCatPhotos(c *fiber.Ctx) error
+	GetCatPhotoByID(c *fiber.Ctx) error
+	SetCatPhotoPrimary(c *fiber.Ctx) error
+	DeleteCatPhoto(c *fiber.Ctx) error
+}
+
+type catPhotoHandlerImpl struct {
+	catPhotoService    services.CatPhotoService
 	requestTimeout     time.Duration
 	fileRequestTimeout time.Duration
 }
 
-func NewCatPhotoHandler(catPhotoService *services.CatPhotoService, requestTimeout, fileRequestTimeout time.Duration) *CatPhotoHandler {
-	return &CatPhotoHandler{catPhotoService: catPhotoService, requestTimeout: requestTimeout, fileRequestTimeout: fileRequestTimeout}
+func NewCatPhotoHandler(catPhotoService services.CatPhotoService, requestTimeout, fileRequestTimeout time.Duration) CatPhotoHandler {
+	return &catPhotoHandlerImpl{catPhotoService: catPhotoService, requestTimeout: requestTimeout, fileRequestTimeout: fileRequestTimeout}
 }
 
 // AddCatPhotos
@@ -32,7 +39,7 @@ func NewCatPhotoHandler(catPhotoService *services.CatPhotoService, requestTimeou
 // @Failure 401 {object} entities.ErrorResponse
 // @Failure 500 {object} entities.CatPhotoUploadResponse
 // @Router /auth/cat/mw/{id}/photo/add [post]
-func (h *CatPhotoHandler) AddCatPhotos(c *fiber.Ctx) error {
+func (h *catPhotoHandlerImpl) AddCatPhotos(c *fiber.Ctx) error {
 
 	// Ограничение времени выполнения
 	ctx, cancel := context.WithTimeout(context.Background(), h.fileRequestTimeout)
@@ -69,7 +76,7 @@ func (h *CatPhotoHandler) AddCatPhotos(c *fiber.Ctx) error {
 // @Failure 401 {object} entities.ErrorResponse
 // @Failure 500 {object} entities.ErrorResponse
 // @Router /auth/cat/photo/{photoID} [get]
-func (h *CatPhotoHandler) GetCatPhotoByID(c *fiber.Ctx) error {
+func (h *catPhotoHandlerImpl) GetCatPhotoByID(c *fiber.Ctx) error {
 
 	// Ограничение времени выполнения
 	ctx, cancel := context.WithTimeout(context.Background(), h.requestTimeout)
@@ -104,7 +111,7 @@ func (h *CatPhotoHandler) GetCatPhotoByID(c *fiber.Ctx) error {
 // @Failure 401 {object} entities.ErrorResponse
 // @Failure 500 {object} entities.ErrorResponse
 // @Router /auth/cat/mw/{id}/photo/{photoID}/primary [patch]
-func (h *CatPhotoHandler) SetCatPhotoPrimary(c *fiber.Ctx) error {
+func (h *catPhotoHandlerImpl) SetCatPhotoPrimary(c *fiber.Ctx) error {
 
 	// Ограничение времени выполнения
 	ctx, cancel := context.WithTimeout(context.Background(), h.requestTimeout)
@@ -141,7 +148,7 @@ func (h *CatPhotoHandler) SetCatPhotoPrimary(c *fiber.Ctx) error {
 // @Failure 401 {object} entities.ErrorResponse
 // @Failure 500 {object} entities.ErrorResponse
 // @Router /auth/cat/mw/{id}/photo/{photoID} [delete]
-func (h *CatPhotoHandler) DeleteCatPhoto(c *fiber.Ctx) error {
+func (h *catPhotoHandlerImpl) DeleteCatPhoto(c *fiber.Ctx) error {
 
 	// Ограничение времени выполнения
 	ctx, cancel := context.WithTimeout(context.Background(), h.requestTimeout)

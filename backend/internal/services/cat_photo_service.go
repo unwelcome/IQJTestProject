@@ -10,15 +10,24 @@ import (
 	"github.com/unwelcome/iqjtest/internal/repositories"
 )
 
-type CatPhotoService struct {
-	catPhotoRepository *repositories.CatPhotoRepository
+type CatPhotoService interface {
+	AddCatPhoto(ctx context.Context, catID int, photos []*multipart.FileHeader) *entities.CatPhotoUploadResponse
+	GetCatPhotoByID(ctx context.Context, photoID int) (*entities.CatPhoto, error)
+	GetAllCatPhotos(ctx context.Context, catID int) ([]*entities.CatPhotoUrl, error)
+	SetCatPhotoPrimary(ctx context.Context, catID int, photoID int) (*entities.CatPhotoSetPrimaryResponse, error)
+	DeleteCatPhoto(ctx context.Context, catID, photoID int) error
+	DeleteAllCatPhotos(ctx context.Context, catID int) error
 }
 
-func NewCatPhotoService(catPhotoRepository *repositories.CatPhotoRepository) *CatPhotoService {
-	return &CatPhotoService{catPhotoRepository: catPhotoRepository}
+type catPhotoServiceImpl struct {
+	catPhotoRepository repositories.CatPhotoRepository
 }
 
-func (s *CatPhotoService) AddCatPhoto(ctx context.Context, catID int, photos []*multipart.FileHeader) *entities.CatPhotoUploadResponse {
+func NewCatPhotoService(catPhotoRepository repositories.CatPhotoRepository) CatPhotoService {
+	return &catPhotoServiceImpl{catPhotoRepository: catPhotoRepository}
+}
+
+func (s *catPhotoServiceImpl) AddCatPhoto(ctx context.Context, catID int, photos []*multipart.FileHeader) *entities.CatPhotoUploadResponse {
 
 	// Создаем массив загруженных фото и массив с ошибками загрузки
 	var uploadedPhotos []*entities.CatPhotoUploadSuccess
@@ -86,7 +95,7 @@ func (s *CatPhotoService) AddCatPhoto(ctx context.Context, catID int, photos []*
 	return catPhotoUploadResponse
 }
 
-func (s *CatPhotoService) GetCatPhotoByID(ctx context.Context, photoID int) (*entities.CatPhoto, error) {
+func (s *catPhotoServiceImpl) GetCatPhotoByID(ctx context.Context, photoID int) (*entities.CatPhoto, error) {
 
 	// Получаем фото по ID
 	catPhoto, err := s.catPhotoRepository.GetCatPhotoByID(ctx, photoID)
@@ -97,7 +106,7 @@ func (s *CatPhotoService) GetCatPhotoByID(ctx context.Context, photoID int) (*en
 	return catPhoto, nil
 }
 
-func (s *CatPhotoService) GetAllCatPhotos(ctx context.Context, catID int) ([]*entities.CatPhotoUrl, error) {
+func (s *catPhotoServiceImpl) GetAllCatPhotos(ctx context.Context, catID int) ([]*entities.CatPhotoUrl, error) {
 
 	// Получаем все фото кота
 	catPhotosUrl, err := s.catPhotoRepository.GetAllCatPhotos(ctx, catID)
@@ -108,7 +117,7 @@ func (s *CatPhotoService) GetAllCatPhotos(ctx context.Context, catID int) ([]*en
 	return catPhotosUrl, nil
 }
 
-func (s *CatPhotoService) SetCatPhotoPrimary(ctx context.Context, catID int, photoID int) (*entities.CatPhotoSetPrimaryResponse, error) {
+func (s *catPhotoServiceImpl) SetCatPhotoPrimary(ctx context.Context, catID int, photoID int) (*entities.CatPhotoSetPrimaryResponse, error) {
 
 	// Устанавливаем главное фото кота
 	err := s.catPhotoRepository.SetCatPhotoPrimary(ctx, catID, photoID)
@@ -119,7 +128,7 @@ func (s *CatPhotoService) SetCatPhotoPrimary(ctx context.Context, catID int, pho
 	return &entities.CatPhotoSetPrimaryResponse{ID: photoID}, nil
 }
 
-func (s *CatPhotoService) DeleteCatPhoto(ctx context.Context, catID, photoID int) error {
+func (s *catPhotoServiceImpl) DeleteCatPhoto(ctx context.Context, catID, photoID int) error {
 
 	// Получаем информацию о фото
 	catPhoto, err := s.catPhotoRepository.GetCatPhotoByID(ctx, photoID)
@@ -141,7 +150,7 @@ func (s *CatPhotoService) DeleteCatPhoto(ctx context.Context, catID, photoID int
 	return nil
 }
 
-func (s *CatPhotoService) DeleteAllCatPhotos(ctx context.Context, catID int) error {
+func (s *catPhotoServiceImpl) DeleteAllCatPhotos(ctx context.Context, catID int) error {
 
 	// Удаляем все фото кота
 	err := s.catPhotoRepository.DeleteAllCatPhotos(ctx, catID)

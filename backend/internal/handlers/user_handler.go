@@ -10,13 +10,19 @@ import (
 	"github.com/unwelcome/iqjtest/internal/services"
 )
 
-type UserHandler struct {
-	userService    *services.UserService
+type UserHandler interface {
+	GetUserByID(c *fiber.Ctx) error
+	GetAllUsers(c *fiber.Ctx) error
+	UpdateUserPassword(c *fiber.Ctx) error
+}
+
+type userHandlerImpl struct {
+	userService    services.UserService
 	requestTimeout time.Duration
 }
 
-func NewUserHandler(userService *services.UserService, requestTimeout time.Duration) *UserHandler {
-	return &UserHandler{userService: userService, requestTimeout: requestTimeout}
+func NewUserHandler(userService services.UserService, requestTimeout time.Duration) UserHandler {
+	return &userHandlerImpl{userService: userService, requestTimeout: requestTimeout}
 }
 
 // GetUserByID
@@ -32,7 +38,7 @@ func NewUserHandler(userService *services.UserService, requestTimeout time.Durat
 // @Failure 401 {object} entities.ErrorResponse
 // @Failure 404 {object} entities.ErrorResponse
 // @Router /auth/user/{id} [get]
-func (h *UserHandler) GetUserByID(c *fiber.Ctx) error {
+func (h *userHandlerImpl) GetUserByID(c *fiber.Ctx) error {
 
 	// Ограничение времени выполнения
 	ctx, cancel := context.WithTimeout(context.Background(), h.requestTimeout)
@@ -64,7 +70,7 @@ func (h *UserHandler) GetUserByID(c *fiber.Ctx) error {
 // @Failure 401 {object} entities.ErrorResponse
 // @Failure 500 {object} entities.ErrorResponse
 // @Router /auth/user/all [get]
-func (h *UserHandler) GetAllUsers(c *fiber.Ctx) error {
+func (h *userHandlerImpl) GetAllUsers(c *fiber.Ctx) error {
 
 	// Ограничение времени выполнения
 	ctx, cancel := context.WithTimeout(context.Background(), h.requestTimeout)
@@ -92,7 +98,7 @@ func (h *UserHandler) GetAllUsers(c *fiber.Ctx) error {
 // @Failure 401 {object} entities.ErrorResponse
 // @Failure 500 {object} entities.ErrorResponse
 // @Router /auth/user/password [patch]
-func (h *UserHandler) UpdateUserPassword(c *fiber.Ctx) error {
+func (h *userHandlerImpl) UpdateUserPassword(c *fiber.Ctx) error {
 
 	// Ограничение времени выполнения
 	ctx, cancel := context.WithTimeout(context.Background(), h.requestTimeout)
