@@ -55,18 +55,18 @@ func NewContainer(postgres *sql.DB, redis *redis.Client, minio *minio.Client, cf
 	container.InitServices(cfg)
 
 	// Инициализация хендлеров
-	container.InitHandlers()
+	container.InitHandlers(cfg)
 
 	// Инициализация middleware
-	container.InitMiddlewares(logger) // Инициализируем после инициализации сервисов
+	container.InitMiddlewares(logger, cfg) // Инициализируем после инициализации сервисов
 
 	return container
 }
 
-func (c *Container) InitMiddlewares(logger zerolog.Logger) {
+func (c *Container) InitMiddlewares(logger zerolog.Logger, cfg *config.Config) {
 	c.LoggingMiddleware = middlewares.LoggingRequest(logger)
-	c.AuthMiddleware = middlewares.AuthMiddleware(c.authService)
-	c.CatOwnershipMiddleware = middlewares.CatOwnershipMiddleware(c.catService)
+	c.AuthMiddleware = middlewares.AuthMiddleware(cfg.JWTSecret)
+	c.CatOwnershipMiddleware = middlewares.CatOwnershipMiddleware(c.catService, cfg.Timeouts.Middleware)
 }
 
 func (c *Container) InitRepositories(postgres *sql.DB, redis *redis.Client, minio *minio.Client, cfg *config.Config) {
@@ -77,16 +77,16 @@ func (c *Container) InitRepositories(postgres *sql.DB, redis *redis.Client, mini
 }
 
 func (c *Container) InitServices(cfg *config.Config) {
-	c.userService = services.NewUserService(c.userRepository)
+	c.userService = services.NewUserService(c.userRepository, cfg.BCryptCost)
 	c.authService = services.NewAuthService(c.userService, c.authRepository, cfg.JWTSecret, cfg.AccessTokenLifetime, cfg.RefreshTokenLifetime)
 	c.catPhotoService = services.NewCatPhotoService(c.catPhotoRepository)
 	c.catService = services.NewCatService(c.catRepository, c.catPhotoService)
 }
 
-func (c *Container) InitHandlers() {
+func (c *Container) InitHandlers(cfg *config.Config) {
 	c.HealthHandler = handlers.NewHealthHandler()
-	c.UserHandler = handlers.NewUserHandler(c.userService)
-	c.AuthHandler = handlers.NewAuthHandler(c.authService)
-	c.CatHandler = handlers.NewCatHandler(c.catService)
-	c.CatPhotoHandler = handlers.NewCatPhotoHandler(c.catPhotoService)
+	c.UserHandler = handlers.NewUserHandler(c.userService, cfg.Timeouts.Request)
+	c.AuthHandler = handlers.NewAuthHandler(c.authService, cfg.Timeouts.Request)
+	c.CatHandler = handlers.NewCatHandler(c.catService, cfg.Timeouts.Request, cfg.Timeouts.FileRequest)
+	c.CatPhotoHandler = handlers.NewCatPhotoHandler(c.catPhotoService, cfg.Timeouts.Request, cfg.Timeouts.FileRequest)
 }

@@ -87,39 +87,49 @@ func (s *CatPhotoService) AddCatPhoto(ctx context.Context, catID int, photos []*
 }
 
 func (s *CatPhotoService) GetCatPhotoByID(ctx context.Context, photoID int) (*entities.CatPhoto, error) {
+
+	// Получаем фото по ID
 	catPhoto, err := s.catPhotoRepository.GetCatPhotoByID(ctx, photoID)
 	if err != nil {
 		return nil, fmt.Errorf("get cat photo by id error: %w", err)
 	}
+
 	return catPhoto, nil
 }
 
 func (s *CatPhotoService) GetAllCatPhotos(ctx context.Context, catID int) ([]*entities.CatPhotoUrl, error) {
+
+	// Получаем все фото кота
 	catPhotosUrl, err := s.catPhotoRepository.GetAllCatPhotos(ctx, catID)
 	if err != nil {
 		return nil, fmt.Errorf("get all cat photo error: %w", err)
 	}
+
 	return catPhotosUrl, nil
 }
 
 func (s *CatPhotoService) SetCatPhotoPrimary(ctx context.Context, catID int, photoID int) (*entities.CatPhotoSetPrimaryResponse, error) {
+
+	// Устанавливаем главное фото кота
 	err := s.catPhotoRepository.SetCatPhotoPrimary(ctx, catID, photoID)
 	if err != nil {
 		return nil, fmt.Errorf("set cat photo primary error: %w", err)
 	}
+
 	return &entities.CatPhotoSetPrimaryResponse{ID: photoID}, nil
 }
 
 func (s *CatPhotoService) DeleteCatPhoto(ctx context.Context, catID, photoID int) error {
+
 	// Получаем информацию о фото
 	catPhoto, err := s.catPhotoRepository.GetCatPhotoByID(ctx, photoID)
 	if err != nil {
-		return fmt.Errorf("get cat photo error: %w", err)
+		return fmt.Errorf("delete cat photo error: %w", err)
 	}
 
 	// Проверяем, что фото принадлежит коту
 	if catPhoto.CatID != catID {
-		return fmt.Errorf("photo %d doesn't belong to cat %d", photoID, catID)
+		return fmt.Errorf("delete cat photo error: photo %d doesn't belong to cat %d", photoID, catID)
 	}
 
 	// Удаляем фото
@@ -127,13 +137,17 @@ func (s *CatPhotoService) DeleteCatPhoto(ctx context.Context, catID, photoID int
 	if err != nil {
 		return fmt.Errorf("delete cat photo error: %w", err)
 	}
+
 	return nil
 }
 
 func (s *CatPhotoService) DeleteAllCatPhotos(ctx context.Context, catID int) error {
+
+	// Удаляем все фото кота
 	err := s.catPhotoRepository.DeleteAllCatPhotos(ctx, catID)
 	if err != nil {
 		return fmt.Errorf("delete all cat photos error: %w", err)
 	}
+
 	return nil
 }

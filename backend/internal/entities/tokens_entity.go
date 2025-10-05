@@ -9,13 +9,6 @@ const (
 	RefreshTokenType = "refresh_token"
 )
 
-type AccessToken struct {
-	Token string `json:"access_token" cookie:"access_token"`
-}
-type RefreshToken struct {
-	Token string `json:"refresh_token" cookie:"refresh_token" redis:"refresh_token"`
-}
-
 type AuthResponse struct {
 	*TokenPair
 	UserID int `json:"id"`

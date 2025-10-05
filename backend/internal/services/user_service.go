@@ -2,7 +2,7 @@ package services
 
 import (
 	"context"
-	"errors"
+	"fmt"
 
 	"github.com/unwelcome/iqjtest/internal/entities"
 	"github.com/unwelcome/iqjtest/internal/repositories"
@@ -11,25 +11,27 @@ import (
 
 type UserService struct {
 	userRepository *repositories.UserRepository
+	bcryptCost     int
 }
 
-const bcryptCost = 10
-
-func NewUserService(userRepository *repositories.UserRepository) *UserService {
-	return &UserService{userRepository: userRepository}
+func NewUserService(userRepository *repositories.UserRepository, bcryptCost int) *UserService {
+	return &UserService{userRepository: userRepository, bcryptCost: bcryptCost}
 }
 
 func (s *UserService) CreateUser(ctx context.Context, userCreate *entities.UserCreateRequest) (int, error) {
+
 	// Переводим пароль из строки в срез байт
 	bytePassword := []byte(userCreate.Password)
-	if len(bytePassword) >= 70 { // Больше 72 байт библиотека не захеширует
-		return 0, errors.New("password too long")
+
+	// Проверяем длину пароля, больше 72 байт библиотека не захеширует
+	if len(bytePassword) >= 70 {
+		return 0, fmt.Errorf("create user error: password too long")
 	}
 
 	// Хешируем пароль
-	passwordHash, err := bcrypt.GenerateFromPassword(bytePassword, bcryptCost)
+	passwordHash, err := bcrypt.GenerateFromPassword(bytePassword, s.bcryptCost)
 	if err != nil {
-		return 0, err
+		return 0, fmt.Errorf("create user error: %w", err)
 	}
 
 	// Создаем пользователя
@@ -38,57 +40,74 @@ func (s *UserService) CreateUser(ctx context.Context, userCreate *entities.UserC
 	// Добавляем пользователя в бд
 	err = s.userRepository.CreateUser(ctx, user)
 	if err != nil {
-		return 0, err
+		return 0, fmt.Errorf("create user error: %w", err)
 	}
+
 	return user.ID, nil
 }
 
 func (s *UserService) LoginUser(ctx context.Context, userLogin *entities.UserLoginRequest) (int, error) {
+
 	// Получаем пользователя с данным логином
 	userWithLogin, err := s.userRepository.GetUserByLogin(ctx, userLogin.Login)
 	if err != nil {
-		return 0, errors.New("user not found")
+		return 0, fmt.Errorf("login user error: user not found")
 	}
 
 	// Проверяем пароль
 	if bcrypt.CompareHashAndPassword([]byte(userWithLogin.PasswordHash), []byte(userLogin.Password)) != nil {
-		return 0, errors.New("invalid password")
+		return 0, fmt.Errorf("login user error: invalid password")
 	}
 
 	return userWithLogin.ID, nil
 }
 
 func (s *UserService) GetUserByID(ctx context.Context, userID int) (*entities.UserGet, error) {
+
+	// Получаем пользователя по ID
 	user, err := s.userRepository.GetUserByID(ctx, userID)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("get user by id error: %w", err)
 	}
 
-	user.ID = userID
 	return user, nil
 }
 
 func (s *UserService) GetAllUsers(ctx context.Context) ([]*entities.UserGet, error) {
+
+	// Получаем всех пользователей
 	users, err := s.userRepository.GetAllUsers(ctx)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("get all users error: %w", err)
 	}
 
 	return users, nil
 }
 
 func (s *UserService) UpdateUserPassword(ctx context.Context, userID int, userUpdatePasswordRequest *entities.UserUpdatePasswordRequest) error {
+
 	// Хешируем новый пароль
-	passwordHash, err := bcrypt.GenerateFromPassword([]byte(userUpdatePasswordRequest.Password), bcryptCost)
+	passwordHash, err := bcrypt.GenerateFromPassword([]byte(userUpdatePasswordRequest.Password), s.bcryptCost)
 	if err != nil {
-		return err
+		return fmt.Errorf("update user password error: %w", err)
 	}
 
+	// Обновляем пароль
 	err = s.userRepository.UpdateUserPassword(ctx, userID, string(passwordHash))
-	return err
+	if err != nil {
+		return fmt.Errorf("update user password error: %w", err)
+	}
+
+	return nil
 }
 
 func (s *UserService) DeleteUser(ctx context.Context, userID int) error {
+
+	// Удаляем пользователя
 	err := s.userRepository.DeleteUser(ctx, userID)
-	return err
+	if err != nil {
+		return fmt.Errorf("delete user error: %w", err)
+	}
+
+	return nil
 }

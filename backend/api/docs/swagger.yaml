@@ -164,7 +164,7 @@ definitions:
       url:
         type: string
     type: object
-  entities.ErrorEntity:
+  entities.ErrorResponse:
     properties:
       error:
         type: string
@@ -240,10 +240,14 @@ paths:
             items:
               $ref: '#/definitions/entities.CatWithPrimePhoto'
             type: array
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/entities.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/entities.ErrorEntity'
+            $ref: '#/definitions/entities.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Получение всех котов
@@ -288,11 +292,15 @@ paths:
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/entities.ErrorEntity'
+            $ref: '#/definitions/entities.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/entities.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/entities.ErrorEntity'
+            $ref: '#/definitions/entities.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Создание кота
@@ -312,18 +320,22 @@ paths:
       produces:
       - application/json
       responses:
-        "201":
-          description: Created
+        "200":
+          description: OK
           schema:
             $ref: '#/definitions/entities.CatWithPhotos'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/entities.ErrorEntity'
+            $ref: '#/definitions/entities.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/entities.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/entities.ErrorEntity'
+            $ref: '#/definitions/entities.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Получение кота по ID
@@ -347,14 +359,14 @@ paths:
           description: OK
           schema:
             type: string
-        "400":
-          description: Bad Request
+        "401":
+          description: Unauthorized
           schema:
-            $ref: '#/definitions/entities.ErrorEntity'
+            $ref: '#/definitions/entities.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/entities.ErrorEntity'
+            $ref: '#/definitions/entities.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Удаление кота
@@ -386,11 +398,15 @@ paths:
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/entities.ErrorEntity'
+            $ref: '#/definitions/entities.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/entities.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/entities.ErrorEntity'
+            $ref: '#/definitions/entities.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Обновление клички, возраста и описания кота
@@ -423,11 +439,15 @@ paths:
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/entities.ErrorEntity'
+            $ref: '#/definitions/entities.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/entities.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/entities.ErrorEntity'
+            $ref: '#/definitions/entities.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Обновление возраста кота
@@ -460,11 +480,15 @@ paths:
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/entities.ErrorEntity'
+            $ref: '#/definitions/entities.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/entities.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/entities.ErrorEntity'
+            $ref: '#/definitions/entities.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Обновление описания кота
@@ -497,11 +521,15 @@ paths:
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/entities.ErrorEntity'
+            $ref: '#/definitions/entities.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/entities.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/entities.ErrorEntity'
+            $ref: '#/definitions/entities.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Обновление клички кота
@@ -526,18 +554,22 @@ paths:
       produces:
       - application/json
       responses:
-        "201":
-          description: Created
+        "200":
+          description: OK
           schema:
             type: string
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/entities.ErrorEntity'
+            $ref: '#/definitions/entities.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/entities.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/entities.ErrorEntity'
+            $ref: '#/definitions/entities.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Удаление фото кота по ID
@@ -569,11 +601,15 @@ paths:
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/entities.ErrorEntity'
+            $ref: '#/definitions/entities.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/entities.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/entities.ErrorEntity'
+            $ref: '#/definitions/entities.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Выбор основного фото кота
@@ -608,7 +644,11 @@ paths:
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/entities.ErrorEntity'
+            $ref: '#/definitions/entities.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/entities.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
@@ -639,11 +679,15 @@ paths:
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/entities.ErrorEntity'
+            $ref: '#/definitions/entities.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/entities.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/entities.ErrorEntity'
+            $ref: '#/definitions/entities.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Получение фото кота
@@ -668,14 +712,18 @@ paths:
           description: OK
           schema:
             type: string
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/entities.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/entities.ErrorEntity'
+            $ref: '#/definitions/entities.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/entities.ErrorEntity'
+            $ref: '#/definitions/entities.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Удаление токена
@@ -702,11 +750,15 @@ paths:
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/entities.ErrorEntity'
+            $ref: '#/definitions/entities.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/entities.ErrorResponse'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/entities.ErrorEntity'
+            $ref: '#/definitions/entities.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: получение пользователя по ID
@@ -726,10 +778,14 @@ paths:
             items:
               $ref: '#/definitions/entities.UserGet'
             type: array
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/entities.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/entities.ErrorEntity'
+            $ref: '#/definitions/entities.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: получение всех пользователей
@@ -750,11 +806,11 @@ paths:
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/entities.ErrorEntity'
+            $ref: '#/definitions/entities.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/entities.ErrorEntity'
+            $ref: '#/definitions/entities.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Удаление пользователя
@@ -782,11 +838,15 @@ paths:
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/entities.ErrorEntity'
+            $ref: '#/definitions/entities.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/entities.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/entities.ErrorEntity'
+            $ref: '#/definitions/entities.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: обновление пароля пользователя
@@ -814,11 +874,11 @@ paths:
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/entities.ErrorEntity'
+            $ref: '#/definitions/entities.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/entities.ErrorEntity'
+            $ref: '#/definitions/entities.ErrorResponse'
       summary: Вход в аккаунт пользователя
       tags:
       - auth
@@ -844,15 +904,11 @@ paths:
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/entities.ErrorEntity'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/entities.ErrorEntity'
+            $ref: '#/definitions/entities.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/entities.ErrorEntity'
+            $ref: '#/definitions/entities.ErrorResponse'
       summary: Обновление токенов
       tags:
       - auth
@@ -879,11 +935,11 @@ paths:
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/entities.ErrorEntity'
+            $ref: '#/definitions/entities.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/entities.ErrorEntity'
+            $ref: '#/definitions/entities.ErrorResponse'
       summary: Создание пользователя
       tags:
       - auth

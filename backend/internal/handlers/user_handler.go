@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"context"
+	"github.com/unwelcome/iqjtest/pkg/utils"
 	"time"
 
 	"github.com/gofiber/fiber/v2"
@@ -10,11 +11,12 @@ import (
 )
 
 type UserHandler struct {
-	userService *services.UserService
+	userService    *services.UserService
+	requestTimeout time.Duration
 }
 
-func NewUserHandler(userService *services.UserService) *UserHandler {
-	return &UserHandler{userService: userService}
+func NewUserHandler(userService *services.UserService, requestTimeout time.Duration) *UserHandler {
+	return &UserHandler{userService: userService, requestTimeout: requestTimeout}
 }
 
 // GetUserByID
@@ -26,29 +28,29 @@ func NewUserHandler(userService *services.UserService) *UserHandler {
 // @Security ApiKeyAuth
 // @Param id path int true "User ID"
 // @Success 200 {object} entities.UserGet
-// @Failure 400 {object} entities.ErrorEntity
-// @Failure 404 {object} entities.ErrorEntity
+// @Failure 400 {object} entities.ErrorResponse
+// @Failure 401 {object} entities.ErrorResponse
+// @Failure 404 {object} entities.ErrorResponse
 // @Router /auth/user/{id} [get]
 func (h *UserHandler) GetUserByID(c *fiber.Ctx) error {
+
 	// Ограничение времени выполнения
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), h.requestTimeout)
 	defer cancel()
 
-	userID, err := c.ParamsInt("id")
+	// Получаем id из параметров
+	userID, err := utils.ValidateIntParams(c, "id", 1, 0)
 	if err != nil {
-		return c.Status(400).JSON(fiber.Map{"error": "Missing id"})
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": err.Error()})
 	}
 
-	if userID < 1 {
-		return c.Status(400).JSON(fiber.Map{"error": "Invalid id"})
-	}
-
+	// Получаем пользователя
 	user, err := h.userService.GetUserByID(ctx, userID)
 	if err != nil {
-		return c.Status(404).JSON(fiber.Map{"error": "User not found"})
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": err.Error()})
 	}
 
-	return c.Status(200).JSON(user)
+	return c.Status(fiber.StatusOK).JSON(user)
 }
 
 // GetAllUsers
@@ -59,18 +61,22 @@ func (h *UserHandler) GetUserByID(c *fiber.Ctx) error {
 // @Produce json
 // @Security ApiKeyAuth
 // @Success 200 {object} []entities.UserGet
-// @Failure 500 {object} entities.ErrorEntity
+// @Failure 401 {object} entities.ErrorResponse
+// @Failure 500 {object} entities.ErrorResponse
 // @Router /auth/user/all [get]
 func (h *UserHandler) GetAllUsers(c *fiber.Ctx) error {
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+
+	// Ограничение времени выполнения
+	ctx, cancel := context.WithTimeout(context.Background(), h.requestTimeout)
 	defer cancel()
 
+	// Получаем всех пользователей
 	users, err := h.userService.GetAllUsers(ctx)
 	if err != nil {
-		return c.Status(500).JSON(fiber.Map{"error": err.Error()})
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
 	}
 
-	return c.Status(200).JSON(users)
+	return c.Status(fiber.StatusOK).JSON(users)
 }
 
 // UpdateUserPassword
@@ -82,24 +88,29 @@ func (h *UserHandler) GetAllUsers(c *fiber.Ctx) error {
 // @Security ApiKeyAuth
 // @Param user body entities.UserUpdatePasswordRequest true "Данные пользователя"
 // @Success 200 {object} entities.UserUpdatePasswordResponse
-// @Failure 400 {object} entities.ErrorEntity
-// @Failure 500 {object} entities.ErrorEntity
+// @Failure 400 {object} entities.ErrorResponse
+// @Failure 401 {object} entities.ErrorResponse
+// @Failure 500 {object} entities.ErrorResponse
 // @Router /auth/user/password [patch]
 func (h *UserHandler) UpdateUserPassword(c *fiber.Ctx) error {
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+
+	// Ограничение времени выполнения
+	ctx, cancel := context.WithTimeout(context.Background(), h.requestTimeout)
 	defer cancel()
 
+	// Парсим тело запроса в структуру
 	userUpdatePasswordRequest := &entities.UserUpdatePasswordRequest{}
 	if err := c.BodyParser(&userUpdatePasswordRequest); err != nil {
-		return c.Status(400).JSON(fiber.Map{"error": "Invalid input"})
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Invalid input"})
 	}
 
 	userID := c.Locals("userID").(int)
 
+	// Обновляем пароль пользователя
 	err := h.userService.UpdateUserPassword(ctx, userID, userUpdatePasswordRequest)
 	if err != nil {
-		return c.Status(500).JSON(fiber.Map{"error": err.Error()})
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
 	}
 
-	return c.Status(200).JSON(&entities.UserUpdatePasswordResponse{ID: userID})
+	return c.Status(fiber.StatusOK).JSON(&entities.UserUpdatePasswordResponse{ID: userID})
 }

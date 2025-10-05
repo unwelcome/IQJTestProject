@@ -3,6 +3,7 @@ package repositories
 import (
 	"context"
 	"database/sql"
+	"fmt"
 
 	"github.com/unwelcome/iqjtest/internal/entities"
 )
@@ -22,36 +23,46 @@ func (r *UserRepository) CreateUser(ctx context.Context, user *entities.User) er
 	if err != nil {
 		return err
 	}
+
 	return nil
 }
 
 func (r *UserRepository) GetUserByID(ctx context.Context, id int) (*entities.UserGet, error) {
 	query := `SELECT login, created_at FROM users WHERE id = $1`
 
+	// Получаем пользователя по ID
 	row := r.db.QueryRowContext(ctx, query, id)
+
+	// Меппинг запроса в структуру
 	user := &entities.UserGet{ID: id}
 	err := row.Scan(&user.Login, &user.CreatedAt)
 	if err != nil {
 		return nil, err
 	}
+
 	return user, nil
 }
 
 func (r *UserRepository) GetUserByLogin(ctx context.Context, login string) (*entities.User, error) {
 	query := `SELECT id, password_hash FROM users WHERE login = $1`
 
+	// Получаем пользователя по login
 	row := r.db.QueryRowContext(ctx, query, login)
+
+	// Меппинг запроса в структуру
 	user := &entities.User{Login: login}
 	err := row.Scan(&user.ID, &user.PasswordHash)
 	if err != nil {
 		return nil, err
 	}
+
 	return user, nil
 }
 
 func (r *UserRepository) GetAllUsers(ctx context.Context) ([]*entities.UserGet, error) {
 	query := `SELECT id, login, created_at FROM users`
 
+	// Получаем всех пользователей
 	rows, err := r.db.QueryContext(ctx, query)
 	if err != nil {
 		return nil, err
@@ -60,12 +71,15 @@ func (r *UserRepository) GetAllUsers(ctx context.Context) ([]*entities.UserGet, 
 
 	var users []*entities.UserGet
 
+	// Меппим каждого пользователя в структуру
 	for rows.Next() {
 		user := &entities.UserGet{}
 		err = rows.Scan(&user.ID, &user.Login, &user.CreatedAt)
 		if err != nil {
 			return nil, err
 		}
+
+		// Добавляем в массив пользователей
 		users = append(users, user)
 	}
 
@@ -75,19 +89,31 @@ func (r *UserRepository) GetAllUsers(ctx context.Context) ([]*entities.UserGet, 
 func (r *UserRepository) UpdateUserPassword(ctx context.Context, id int, passwordHash string) error {
 	query := `UPDATE users SET password_hash = $1 WHERE id = $2`
 
+	// Обновляем пароль пользователя
 	_, err := r.db.ExecContext(ctx, query, passwordHash, id)
 	if err != nil {
 		return err
 	}
+
 	return nil
 }
 
 func (r *UserRepository) DeleteUser(ctx context.Context, id int) error {
 	query := `DELETE FROM users WHERE id = $1`
 
-	_, err := r.db.ExecContext(ctx, query, id)
+	// Удаляем пользователя
+	result, err := r.db.ExecContext(ctx, query, id)
 	if err != nil {
 		return err
 	}
+
+	// Проверяем что пользователь был удалён
+	rows, err := result.RowsAffected()
+	if err != nil {
+		return err
+	} else if rows == 0 {
+		return fmt.Errorf("user not found")
+	}
+
 	return nil
 }

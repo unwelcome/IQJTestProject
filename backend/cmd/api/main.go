@@ -1,14 +1,11 @@
 package main
 
 import (
-	"context"
 	"github.com/gofiber/fiber/v2"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	_ "github.com/unwelcome/iqjtest/api/docs"
-	"github.com/unwelcome/iqjtest/database/minio"
-	"github.com/unwelcome/iqjtest/database/postgresql"
-	"github.com/unwelcome/iqjtest/database/redis"
+	"github.com/unwelcome/iqjtest/database"
 	"github.com/unwelcome/iqjtest/internal/config"
 	"github.com/unwelcome/iqjtest/internal/dependency_injection"
 	"github.com/unwelcome/iqjtest/internal/routes"
@@ -32,22 +29,16 @@ func main() {
 	// Инициализация конфига
 	cfg := config.LoadConfig(logger)
 
-	// Подключение к postgresql
-	Postgres := postgresql.Connect(cfg, logger)
-	defer Postgres.Close()
-
-	// Подключение к redis
-	Redis := redis.Connect(context.Background(), cfg, logger)
-	defer Redis.Close()
-
-	// Подключение к MinIO
-	Minio := minio.InitMinio(cfg.S3ConnConfig(), logger, cfg.GetS3Buckets())
+	// Подключение к базам данных
+	postgres, redis, minio := database.ConnectToDatabases(cfg, logger)
+	defer postgres.Close()
+	defer redis.Close()
 
 	// Инициализация fiber
 	app := fiber.New()
 
 	// Создание контейнера с dependency injection
-	container := dependency_injection.NewContainer(Postgres, Redis, Minio, cfg, logger)
+	container := dependency_injection.NewContainer(postgres, redis, minio, cfg, logger)
 
 	// Инициализация роутов
 	routes.SetupRoutes(app, container)

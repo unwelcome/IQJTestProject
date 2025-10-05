@@ -1,41 +1,42 @@
 package middlewares
 
 import (
-	"context"
-	"time"
-
+	"fmt"
 	"github.com/gofiber/fiber/v2"
-	"github.com/unwelcome/iqjtest/internal/services"
+	"github.com/unwelcome/iqjtest/internal/entities"
+	"github.com/unwelcome/iqjtest/pkg/utils"
 )
 
-func AuthMiddleware(authService *services.AuthService) fiber.Handler {
+func AuthMiddleware(secretKey string) fiber.Handler {
 	return func(c *fiber.Ctx) error {
+
 		// Получаем заголовок авторизации
 		authHeader := c.Get("Authorization")
 		if authHeader == "" {
-			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "Authorization header required"})
+			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "authorization header required"})
 		}
 
 		// Проверяем корректность заголовка
 		if len(authHeader) < 7 || authHeader[:7] != "Bearer " {
-			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "Invalid authorization header format"})
+			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "invalid authorization header format"})
 		}
 
 		// Получаем токен из заголовка
 		accessToken := authHeader[7:]
 
-		// Создаем контекст
-		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-		defer cancel()
-
-		// Валидируем токен
-		userID, err := authService.ValidateAccessToken(ctx, accessToken)
+		// Парсим токен
+		tokenClaims, err := utils.ParseToken(accessToken, secretKey)
 		if err != nil {
-			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": err.Error()})
+			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": fmt.Errorf("parse token error: %w", err).Error()})
+		}
+
+		// Проверяем тип токена
+		if tokenClaims.Type != entities.AccessTokenType {
+			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "invalid token type"})
 		}
 
 		// Устанавливаем userID в контекст
-		c.Locals("userID", userID)
+		c.Locals("userID", tokenClaims.UserID)
 
 		return c.Next()
 	}

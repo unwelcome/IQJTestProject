@@ -2,11 +2,10 @@ package services
 
 import (
 	"context"
-	"errors"
 	"fmt"
+	"github.com/unwelcome/iqjtest/pkg/utils"
 	"time"
 
-	"github.com/golang-jwt/jwt/v5"
 	"github.com/unwelcome/iqjtest/internal/entities"
 	"github.com/unwelcome/iqjtest/internal/repositories"
 )
@@ -36,6 +35,7 @@ func NewAuthService(userService *UserService, tokenRepository *repositories.Auth
 }
 
 func (s *AuthService) RegistrationUser(ctx context.Context, userCreate *entities.UserCreateRequest) (*entities.AuthResponse, error) {
+
 	// Создаем пользователя
 	userID, err := s.userService.CreateUser(ctx, userCreate)
 	if err != nil {
@@ -43,9 +43,9 @@ func (s *AuthService) RegistrationUser(ctx context.Context, userCreate *entities
 	}
 
 	// Генерируем пару access и refresh токенов
-	tokenPair, err := CreateTokens(userID, s)
+	tokenPair, err := utils.CreateTokens(userID, s.secretKey, s.accessTokenLifetime, s.refreshTokenLifetime, &s.tokenID)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("create user error: %w", err)
 	}
 
 	// Сохраняем refresh токен в кеш (если не получилось - не критично)
@@ -55,6 +55,7 @@ func (s *AuthService) RegistrationUser(ctx context.Context, userCreate *entities
 }
 
 func (s *AuthService) LoginUser(ctx context.Context, userLogin *entities.UserLoginRequest) (*entities.AuthResponse, error) {
+
 	// Проверяем, есть ли пользователь с таким логином в системе и получаем его ID
 	userID, err := s.userService.LoginUser(ctx, userLogin)
 	if err != nil {
@@ -62,9 +63,9 @@ func (s *AuthService) LoginUser(ctx context.Context, userLogin *entities.UserLog
 	}
 
 	// Генерируем токены
-	tokenPair, err := CreateTokens(userID, s)
+	tokenPair, err := utils.CreateTokens(userID, s.secretKey, s.accessTokenLifetime, s.refreshTokenLifetime, &s.tokenID)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("login user error: %w", err)
 	}
 
 	// Сохраняем refresh токен в кеш (если не получилось - не критично)
@@ -74,54 +75,46 @@ func (s *AuthService) LoginUser(ctx context.Context, userLogin *entities.UserLog
 }
 
 func (s *AuthService) RefreshToken(ctx context.Context, refreshToken string) (*entities.TokenPair, error) {
+
 	// Парсим refresh токен
-	tokenClaims, err := ParseToken(refreshToken, s.secretKey)
+	tokenClaims, err := utils.ParseToken(refreshToken, s.secretKey)
 	if err != nil {
-		return nil, fmt.Errorf("invalid refresh token")
+		return nil, fmt.Errorf("refresh tokens error: %w", err)
 	}
 
 	// Проверяем тип токена
 	if tokenClaims.Type != entities.RefreshTokenType {
-		return nil, fmt.Errorf("invalid token type")
+		return nil, fmt.Errorf("refresh tokens error: invalid token type")
 	}
 
 	// Создаем новую пару токенов
-	tokenPair, err := CreateTokens(tokenClaims.UserID, s)
+	tokenPair, err := utils.CreateTokens(tokenClaims.UserID, s.secretKey, s.accessTokenLifetime, s.refreshTokenLifetime, &s.tokenID)
 	if err != nil {
-		return nil, errors.New("failed to create new tokens")
+		return nil, fmt.Errorf("refresh tokens error: %w", err)
 	}
 
 	// Заменяем старый refresh токен на новый
 	err = s.tokenRepository.ReplaceToken(ctx, tokenClaims.UserID, refreshToken, tokenPair.RefreshToken, entities.RefreshTokenType, s.refreshTokenLifetime)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("refresh tokens error: %w", err)
 	}
 
 	return tokenPair, nil
 }
 
-func (s *AuthService) ValidateAccessToken(ctx context.Context, accessToken string) (int, error) {
-	tokenClaims, err := ParseToken(accessToken, s.secretKey)
-	if err != nil {
-		return 0, err
-	}
-
-	if tokenClaims.Type != entities.AccessTokenType {
-		return 0, errors.New("invalid token type")
-	}
-
-	return tokenClaims.UserID, nil
-}
-
 func (s *AuthService) DeleteRefreshToken(ctx context.Context, userID int, refreshToken string) error {
+
+	// Удаляем токен
 	err := s.tokenRepository.DeleteToken(ctx, userID, refreshToken, entities.RefreshTokenType)
 	if err != nil {
-		return err
+		return fmt.Errorf("delete refresh token error: %w", err)
 	}
+
 	return nil
 }
 
 func (s *AuthService) DeleteUser(ctx context.Context, userID int) error {
+
 	// Удаляем пользователя из бд
 	err := s.userService.DeleteUser(ctx, userID)
 	if err != nil {
@@ -131,74 +124,8 @@ func (s *AuthService) DeleteUser(ctx context.Context, userID int) error {
 	// Удаляем все токены пользователя
 	err = s.tokenRepository.DeleteAllTokens(ctx, userID)
 	if err != nil {
-		return err
+		return fmt.Errorf("delete all user tokens error: %w", err)
 	}
 
 	return nil
-}
-
-// Генерация пары access и refresh токенов
-func CreateTokens(userID int, s *AuthService) (*entities.TokenPair, error) {
-	// Генерируем access токен
-	accessToken, err := GenerateToken(userID, s.secretKey, entities.AccessTokenType, s.accessTokenLifetime, s.tokenID)
-	s.tokenID++
-	if err != nil {
-		return nil, err
-	}
-
-	// Генерируем refresh токен
-	refreshToken, err := GenerateToken(userID, s.secretKey, entities.RefreshTokenType, s.refreshTokenLifetime, s.tokenID)
-	s.tokenID++
-	if err != nil {
-		return nil, err
-	}
-
-	// Возвращаем оба токена
-	return &entities.TokenPair{AccessToken: accessToken, RefreshToken: refreshToken}, nil
-}
-
-// Создание jwt токена
-func GenerateToken(userID int, secretKey string, tokenType string, tokenLifetime time.Duration, tokenID int) (string, error) {
-	// Время создания токена
-	now := time.Now()
-
-	// Тело токена
-	claims := &entities.TokenClaims{
-		UserID: userID,
-		Type:   tokenType,
-		RegisteredClaims: jwt.RegisteredClaims{
-			ExpiresAt: jwt.NewNumericDate(now.Add(tokenLifetime)),
-			ID:        fmt.Sprintf("token-%d", tokenID),
-		},
-	}
-
-	// Подписываем токен
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	tokenString, err := token.SignedString([]byte(secretKey))
-	if err != nil {
-		return "", err
-	}
-
-	return tokenString, nil
-}
-
-// Парсинг jwt токена
-func ParseToken(tokenString string, secretKey string) (*entities.TokenClaims, error) {
-	// Подтверждение подлинности токена
-	token, err := jwt.ParseWithClaims(tokenString, &entities.TokenClaims{}, func(token *jwt.Token) (any, error) {
-		return []byte(secretKey), nil
-	})
-	if err != nil {
-		if errors.Is(err, jwt.ErrTokenExpired) {
-			return nil, errors.New("token expired")
-		}
-		return nil, errors.New("can't verify token")
-	}
-
-	// Парсинг тела токена
-	if claims, ok := token.Claims.(*entities.TokenClaims); ok {
-		return claims, nil
-	}
-
-	return nil, errors.New("invalid token")
 }

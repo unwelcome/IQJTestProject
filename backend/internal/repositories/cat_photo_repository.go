@@ -2,12 +2,11 @@ package repositories
 
 import (
 	"context"
-	"crypto/rand"
 	"database/sql"
 	"fmt"
 	"github.com/minio/minio-go/v7"
 	"github.com/unwelcome/iqjtest/internal/entities"
-	"path/filepath"
+	"github.com/unwelcome/iqjtest/pkg/utils"
 )
 
 type CatPhotoRepository struct {
@@ -28,7 +27,7 @@ func NewCatPhotoRepository(db *sql.DB, minioClient *minio.Client, endpoint, buck
 
 func (r *CatPhotoRepository) AddCatPhoto(ctx context.Context, catID int, req *entities.CatPhotoUploadRequest) (*entities.CatPhotoUploadSuccess, error) {
 	// Генерируем уникальное имя файла
-	filename := generateFilename(catID, req.FileName)
+	filename := utils.GenerateFilename(req.FileName, catID, "cat")
 
 	// Сохраняем файл в Minio
 	_, err := r.minioClient.PutObject(
@@ -93,6 +92,7 @@ func (r *CatPhotoRepository) GetCatPhotoByID(ctx context.Context, photoID int) (
 	if err != nil {
 		return nil, err
 	}
+
 	return catPhoto, nil
 }
 
@@ -131,6 +131,7 @@ func (r *CatPhotoRepository) SetCatPhotoPrimary(ctx context.Context, catID, phot
 	if err != nil {
 		return fmt.Errorf("commit tx error: %w", err)
 	}
+
 	return nil
 }
 
@@ -148,6 +149,7 @@ func (r *CatPhotoRepository) DeleteCatPhoto(ctx context.Context, photoID int) er
 	if err != nil {
 		return err
 	}
+
 	return nil
 }
 
@@ -180,24 +182,4 @@ func (r *CatPhotoRepository) DeleteAllCatPhotos(ctx context.Context, catID int) 
 	}
 
 	return nil
-}
-
-func generateFilename(catID int, fileName string) string {
-	// Извлекаем расширение файла
-	ext := filepath.Ext(fileName)
-	if ext == "" {
-		ext = ".jpg"
-	}
-
-	// Генерируем уникальный ID для имени файла
-	uniqueID := generateUniqueID()
-
-	// Формируем название файла cat/{catID}/{uuid}{ext}
-	return fmt.Sprintf("cat/%d/%s%s", catID, uniqueID, ext)
-}
-
-func generateUniqueID() string {
-	bytes := make([]byte, 16)
-	rand.Read(bytes)
-	return fmt.Sprintf("%x", bytes)
 }

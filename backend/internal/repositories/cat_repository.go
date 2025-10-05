@@ -21,6 +21,7 @@ func (r *CatRepository) CreateCat(ctx context.Context, userID int, cat *entities
 	if err != nil {
 		return err
 	}
+
 	return nil
 }
 
@@ -35,6 +36,7 @@ func (r *CatRepository) GetCatByID(ctx context.Context, catID int) (*entities.Ca
 	if err != nil {
 		return nil, err
 	}
+
 	return cat, nil
 }
 
@@ -110,6 +112,7 @@ func (r *CatRepository) UpdateCatAge(ctx context.Context, catID int, newAge int)
 	if err != nil {
 		return err
 	}
+
 	return nil
 }
 
@@ -120,6 +123,7 @@ func (r *CatRepository) UpdateCatDescription(ctx context.Context, catID int, new
 	if err != nil {
 		return err
 	}
+
 	return nil
 }
 
@@ -130,6 +134,7 @@ func (r *CatRepository) UpdateCat(ctx context.Context, catID int, catUpdateReque
 	if err != nil {
 		return err
 	}
+
 	return nil
 }
 
@@ -140,5 +145,6 @@ func (r *CatRepository) DeleteCat(ctx context.Context, catID int) error {
 	if err != nil {
 		return err
 	}
+
 	return nil
 }

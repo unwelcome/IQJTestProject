@@ -3,6 +3,7 @@ package repositories
 import (
 	"context"
 	"fmt"
+	"github.com/unwelcome/iqjtest/pkg/utils"
 	"time"
 
 	"github.com/redis/go-redis/v9"
@@ -18,7 +19,7 @@ func NewAuthRepository(redis *redis.Client) *AuthRepository {
 }
 
 func (r *AuthRepository) AddToken(ctx context.Context, userID int, token string, tokenType string, expiresIn time.Duration) error {
-	key := getTokenKey(userID, tokenType)
+	key := utils.GetTokenKey(userID, tokenType)
 
 	// Добавляем токен в сет
 	err := r.redis.SAdd(ctx, key, token).Err()
@@ -36,7 +37,7 @@ func (r *AuthRepository) AddToken(ctx context.Context, userID int, token string,
 }
 
 func (r *AuthRepository) CheckExistsToken(ctx context.Context, userID int, token string, tokenType string) error {
-	key := getTokenKey(userID, tokenType)
+	key := utils.GetTokenKey(userID, tokenType)
 
 	exists, err := r.redis.SIsMember(ctx, key, token).Result()
 	if err != nil {
@@ -45,11 +46,12 @@ func (r *AuthRepository) CheckExistsToken(ctx context.Context, userID int, token
 	if !exists {
 		return fmt.Errorf("token does not exist")
 	}
+
 	return nil
 }
 
 func (r *AuthRepository) ReplaceToken(ctx context.Context, userID int, oldToken, newToken, tokenType string, expiresIn time.Duration) error {
-	key := getTokenKey(userID, tokenType)
+	key := utils.GetTokenKey(userID, tokenType)
 
 	// Проверяем наличие старого токена
 	exist, _ := r.redis.SIsMember(ctx, key, oldToken).Result()
@@ -79,7 +81,7 @@ func (r *AuthRepository) ReplaceToken(ctx context.Context, userID int, oldToken,
 }
 
 func (r *AuthRepository) DeleteToken(ctx context.Context, userID int, token string, tokenType string) error {
-	key := getTokenKey(userID, tokenType)
+	key := utils.GetTokenKey(userID, tokenType)
 
 	value, err := r.redis.SRem(ctx, key, token).Result()
 	if err != nil {
@@ -87,31 +89,24 @@ func (r *AuthRepository) DeleteToken(ctx context.Context, userID int, token stri
 	} else if value == 0 {
 		return fmt.Errorf("token not found")
 	}
+
 	return nil
 }
 
 func (r *AuthRepository) DeleteAllTokens(ctx context.Context, userID int) error {
 	// Удаляем все access токены
-	key := getTokenKey(userID, entities.AccessTokenType)
+	key := utils.GetTokenKey(userID, entities.AccessTokenType)
 	err := r.redis.Del(ctx, key).Err()
 	if err != nil {
 		return fmt.Errorf("failed to delete all access tokens: %s", err.Error())
 	}
 
 	// Удаляем все refresh токены
-	key = getTokenKey(userID, entities.RefreshTokenType)
+	key = utils.GetTokenKey(userID, entities.RefreshTokenType)
 	err = r.redis.Del(ctx, key).Err()
 	if err != nil {
 		return fmt.Errorf("failed to delete all refresh tokens: %s", err.Error())
 	}
 
 	return nil
-}
-
-func getTokenKey(userID int, tokenType string) string {
-	if tokenType == entities.AccessTokenType {
-		return fmt.Sprintf("user:%d:access_tokens", userID)
-	} else {
-		return fmt.Sprintf("user:%d:refresh_tokens", userID)
-	}
 }

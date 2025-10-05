@@ -33,11 +33,18 @@ type Config struct {
 	S3User     string
 	S3Password string
 	S3UseSSL   bool
-	S3Buckets  map[string]*minio.Bucket
+	S3Buckets  map[string]*miniodb.Bucket
 
+	BCryptCost           int
 	JWTSecret            string
 	AccessTokenLifetime  time.Duration
 	RefreshTokenLifetime time.Duration
+
+	Timeouts struct {
+		Middleware  time.Duration
+		Request     time.Duration
+		FileRequest time.Duration
+	}
 }
 
 func LoadConfig(l zerolog.Logger) *Config {
@@ -83,15 +90,23 @@ func LoadConfig(l zerolog.Logger) *Config {
 		cfg.S3Host = getEnv("MINIO_HOST", "minio")
 	}
 
+	// Устанавливаем стойкость шифрования пароля
+	cfg.BCryptCost = 10
+
 	// Инициализируем jwt секрет
 	cfg.JWTSecret = getEnv("JWT_SECRET", "ultra-secret-key")
-	cfg.AccessTokenLifetime = 55 * time.Minute
+	cfg.AccessTokenLifetime = 5 * time.Minute
 	cfg.RefreshTokenLifetime = 30 * 24 * time.Hour
 
 	// Декларируем S3 бакеты
-	cfg.S3Buckets = map[string]*minio.Bucket{
-		"catPhotoBucket": &minio.Bucket{Name: "cat-photo-bucket", IsOpen: true},
+	cfg.S3Buckets = map[string]*miniodb.Bucket{
+		"catPhotoBucket": &miniodb.Bucket{Name: "cat-photo-bucket", IsOpen: true},
 	}
+
+	// Устанавливаем время выполнения запросов
+	cfg.Timeouts.Middleware = time.Second * 5
+	cfg.Timeouts.Request = time.Second * 5
+	cfg.Timeouts.FileRequest = time.Second * 30
 
 	l.Trace().Str("AppInternalHost", cfg.AppInternalHost).Str("AppInternalPort", cfg.AppInternalPort).Msg("App internal config")
 	l.Trace().Str("AppPublicHost", cfg.AppPublicHost).Str("AppPublicPort", cfg.AppPublicPort).Msg("App public config")
@@ -107,18 +122,18 @@ func (c *Config) GetAppInternalAddress() string {
 	return fmt.Sprintf("%s:%s", c.AppInternalHost, c.AppInternalPort)
 }
 
-func (c *Config) DBConnString() string {
+func (c *Config) GetDBConnString() string {
 	return fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable",
 		c.DBHost, c.DBPort, c.DBUser, c.DBPassword, c.DBName)
 }
 
-func (c *Config) CacheConnString() string {
+func (c *Config) GetCacheConnString() string {
 	//"redis://<user>:<pass>@localhost:6379/<db>"
 	return fmt.Sprintf("redis://%s:%s@%s:%s/%s", c.CacheUser, c.CachePassword, c.CacheHost, c.CachePort, c.CacheDBName)
 }
 
-func (c *Config) S3ConnConfig() *minio.ConnectConfig {
-	return &minio.ConnectConfig{
+func (c *Config) S3ConnConfig() *miniodb.ConnectConfig {
+	return &miniodb.ConnectConfig{
 		BackendEndpoint: fmt.Sprintf("%s:%s", c.S3Host, c.S3Port),
 		PublicEndpoint:  fmt.Sprintf("%s:%s", c.AppPublicHost, c.S3Port),
 		Username:        c.S3User,
@@ -127,8 +142,8 @@ func (c *Config) S3ConnConfig() *minio.ConnectConfig {
 	}
 }
 
-func (c *Config) GetS3Buckets() []*minio.Bucket {
-	var buckets []*minio.Bucket
+func (c *Config) GetS3Buckets() []*miniodb.Bucket {
+	var buckets []*miniodb.Bucket
 	for _, bucket := range c.S3Buckets {
 		buckets = append(buckets, bucket)
 	}

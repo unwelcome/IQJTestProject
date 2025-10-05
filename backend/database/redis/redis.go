@@ -1,16 +1,15 @@
-package redis
+package redisdb
 
 import (
 	"context"
 	"github.com/redis/go-redis/v9"
 	"github.com/rs/zerolog"
-	"github.com/unwelcome/iqjtest/internal/config"
 )
 
-func Connect(ctx context.Context, cfg *config.Config, l zerolog.Logger) *redis.Client {
-	opt, err := redis.ParseURL(cfg.CacheConnString())
+func Connect(ctx context.Context, connectString string, l zerolog.Logger) *redis.Client {
+	opt, err := redis.ParseURL(connectString)
 	if err != nil {
-		panic(err)
+		l.Fatal().Err(err).Msg("failed to parse redis connect string")
 	}
 
 	rdb := redis.NewClient(opt)

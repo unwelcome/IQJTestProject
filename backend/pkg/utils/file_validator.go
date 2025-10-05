@@ -1,9 +1,11 @@
 package utils
 
 import (
+	"crypto/rand"
 	"fmt"
 	"github.com/gofiber/fiber/v2"
 	"mime/multipart"
+	"path/filepath"
 )
 
 func GetFilesFromFormData(c *fiber.Ctx, key string, maxFilesCount int) ([]*multipart.FileHeader, error) {
@@ -51,4 +53,24 @@ func IsImageFile(fileHeader *multipart.FileHeader) bool {
 
 	contentType := fileHeader.Header.Get("Content-Type")
 	return allowedTypes[contentType]
+}
+
+func GenerateFilename(fileName string, id int, prefix string) string {
+	// Извлекаем расширение файла
+	ext := filepath.Ext(fileName)
+	if ext == "" {
+		ext = ".jpg"
+	}
+
+	// Генерируем уникальный ID для имени файла
+	uniqueID := generateUniqueID()
+
+	// Формируем название файла cat/{catID}/{uuid}{ext}
+	return fmt.Sprintf("%s/%d/%s%s", prefix, id, uniqueID, ext)
+}
+
+func generateUniqueID() string {
+	bytes := make([]byte, 16)
+	rand.Read(bytes)
+	return fmt.Sprintf("%x", bytes)
 }
